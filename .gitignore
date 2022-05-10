@@ -1,0 +1,3 @@
+./data/quac/train_quac.json
+./data/orconvqa/train.onlyPos.jsonl
+./data/orconvqa/train.txt
