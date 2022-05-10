@@ -32,8 +32,8 @@ from datasets import load_dataset, DatasetDict
 from models import AlbertForTextRanking
 from trainers import AlbertTrainer
 
-import os
-os.environ["WANDB_DISABLED"] = "true"
+# import os
+# os.environ["WANDB_DISABLED"] = "true"
 
 # Arguments: (1) Model arguments (2) DataTraining arguments (3)
 @dataclass
@@ -59,7 +59,7 @@ class OurDataArguments:
     # Huggingface's original arguments. 
     dataset_name: Optional[str] = field(default=None)
     dataset_config_name: Optional[str] = field(default=None)
-    overwrite_cache: bool = field(default=True)
+    overwrite_cache: bool = field(default=False)
     validation_split_percentage: Optional[int] = field(default=5)
     preprocessing_num_workers: Optional[int] = field(default=None)
     # Customized arguments
@@ -152,6 +152,7 @@ def main():
         features['passage_input_ids'] = features_passage['input_ids']
         features['passage_attention_mask'] = features_passage['attention_mask']
         features['passage_token_type_ids'] = features_passage['token_type_ids']
+        features['ranking_label'] = examples['label']
 
         return features
 
@@ -170,15 +171,8 @@ def main():
             load_from_cache_file=not data_args.overwrite_cache,
     )
     dataset = dataset.remove_columns(
-            ['input_ids', 'attention_mask', 'token_type_ids']
+            ['input_ids', 'attention_mask', 'token_type_ids', 'label']
     )
-
-    # [CHECK]
-    for data in dataset['train']:
-        print(data['query_input_ids'])
-        print(len(data['query_input_ids']))
-    
-
 
     # data collator (transform the datset into the training mini-batch)
     # [TODO] It should be the customized data collator
