@@ -47,8 +47,9 @@ class OurModelArguments:
     # Cutomized arguments
     pooler_type: str = field(default="cls")
     temp: float = field(default=0.05)
-    num_labels: float = field(default=2)
-
+    num_labels: int = field(default=2)
+    project_size: float = field(default=128)
+    project_dropout_prob: int = field(default=None)
 
 @dataclass
 class OurDataArguments:
@@ -105,8 +106,7 @@ def main():
         model_args, data_args, training_args = parser.parse_args_into_dataclasses()
 
     # config and tokenizers
-    # [TODO] If the additional arguments are fixed for putting in the function,
-    # make it consistent to the function calls.
+    # [TODO] Overwrite the initial argument from huggingface
     config_kwargs = {
             "num_labels": model_args.num_labels,
             "output_hidden_states": True
@@ -120,13 +120,10 @@ def main():
 
 
     # model 
-    model_kwargs = {
-            "cache_dir": model_args.cache_dir,
-    }
     model = AlbertForTextRanking.from_pretrained(
             model_args.model_name_or_path,
             config=config, 
-            model_args=model_args
+            model_args=model_args,
     )
 
     # Dataset 
@@ -162,36 +159,21 @@ def main():
         "eval": data_args.eval_file
     })
 
-    ## Preprocessing: training dataset
-    dataset['train'] = dataset.map(
+    ## Preprocessing: training dataset and evaliatopm dataset
+    dataset = dataset.map(
             function=prepare_retrieval_pretraining,
             batched=True,
             remove_columns=['history', 'question', 'passage', 'rewrite'],
             num_proc=multiprocessing.cpu_count(),
             load_from_cache_file=not data_args.overwrite_cache,
     )
-    dataset['train'] = dataset['train'].remove_columns(
-            ['input_ids', 'attention_mask', 'token_type_ids']
-    )
-    
-    ## Preprocessing: dev dataset (preseve the words and word_ids)
-    dataset['eval'] = dataset.map(
-            function=prepare_retrieval_pretraining,
-            batched=True,
-            remove_columns=['history', 'question', 'passage', 'rewrite'],
-            num_proc=multiprocessing.cpu_count(),
-            load_from_cache_file=not data_args.overwrite_cache,
-    )
-    dataset['eval'] = dataset['train'].remove_columns(
+    dataset = dataset.remove_columns(
             ['input_ids', 'attention_mask', 'token_type_ids']
     )
 
     # data collator (transform the datset into the training mini-batch)
     # [TODO] It should be the customized data collator
-    data_collator = DefaultDataCollator(
-        tokenizer=tokenizer,
-        return_tensors="pt",
-    )
+    data_collator = DefaultDataCollator(return_tensors="pt",)
 
     # Trainer
     trainer = AlbertTrainer(

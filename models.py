@@ -9,29 +9,30 @@ class AlbertForTextRanking(AlbertPreTrainedModel):
     R"""
     The text ranking model using albert with siamese network.
     """
-    def __init__(self, congfig):
+    def __init__(self, config, **model_kargs):
         super().__init__(config)
-        self.num_labels = config.num_labels
+        # self.num_labels = config.num_labels
         self.config = config
+        self.model_args = model_kargs["model_args"]
 
         self.query_albert = AlbertModel(config)
         self.passage_albert = AlbertModel(config)
-        self.query_project = nn.Linear(config.hidden_size, config.proj_size)
-        self.passage_project = nn.Linear(config.hidden_size, config.proj_size)
+        self.query_project = nn.Linear(config.hidden_size, self.model_args.project_size)
+        self.passage_project = nn.Linear(config.hidden_size, self.model_args.project_size)
 
         project_dropout = (
-                config.project_dropout_prob if config.project_dropout_prob is not None \
+                self.model_args.project_dropout_prob if self.model_args.project_dropout_prob is not None \
                         else config.hidden_dropout_prob
         )
         self.dropout = nn.Dropout(project_dropout)
         self.softmax = nn.Softmax(dim=-1)
 
-        self.init_weight()
+        self.post_init()
 
     def forward(self, 
                 query_input_ids=None, passage_input_ids=None, 
                 query_attention_mask=None, passage_attention_mask=None,
-                query_token_type_ids=None, passage_token_type_ids=None
+                query_token_type_ids=None, passage_token_type_ids=None,
                 ranking_label=None,):
         f"""
         Bi-encoder architecture with two albert, for query and passage respectively
