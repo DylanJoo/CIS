@@ -32,11 +32,14 @@ from datasets import load_dataset, DatasetDict
 from models import AlbertForTextRanking
 from trainers import AlbertTrainer
 
+import os
+os.environ["WANDB_DISABLED"] = "true"
+
 # Arguments: (1) Model arguments (2) DataTraining arguments (3)
 @dataclass
 class OurModelArguments:
     # Huggingface's original arguments
-    model_name_or_path: Optional[str] = field(default='./models')
+    model_name_or_path: Optional[str] = field(default='albert-base-v2')
     model_type: Optional[str] = field(default='albert-base-v2')
     config_name: Optional[str] = field(default='albert-base-v2')
     tokenizer_name: Optional[str] = field(default='albert-base-v2')
@@ -56,16 +59,16 @@ class OurDataArguments:
     # Huggingface's original arguments. 
     dataset_name: Optional[str] = field(default=None)
     dataset_config_name: Optional[str] = field(default=None)
-    overwrite_cache: bool = field(default=False)
+    overwrite_cache: bool = field(default=True)
     validation_split_percentage: Optional[int] = field(default=5)
     preprocessing_num_workers: Optional[int] = field(default=None)
     # Customized arguments
-    train_file: Optional[str] = field(default="data/sample.jsonl")
-    eval_file: Optional[str] = field(default="data/sample.jsonl")
-    test_file: Optional[str] = field(default="data/sample.jsonl")
+    train_file: Optional[str] = field(default="data/orconvqa/sample.jsonl")
+    eval_file: Optional[str] = field(default="data/orconvqa/sample.jsonl")
+    test_file: Optional[str] = field(default="data/orconvqa/sample.jsonl")
     max_q_seq_length: Optional[int] = field(default=128)
-    max_p_seq_length: Optional[int] = field(default=512)
-    pad_to_max_length: bool = field(default=False)
+    max_p_seq_length: Optional[int] = field(default=256)
+    pad_to_strategy: str = field(default="max_length")
 
 @dataclass
 class OurTrainingArguments(TrainingArguments):
@@ -118,10 +121,9 @@ def main():
     config = AutoConfig.from_pretrained(model_args.config_name, **config_kwargs)
     tokenizer = AutoTokenizer.from_pretrained(model_args.tokenizer_name, **tokenizer_kwargs)
 
-
     # model 
     model = AlbertForTextRanking.from_pretrained(
-            model_args.model_name_or_path,
+            pretrained_model_name_or_path=model_args.model_name_or_path,
             config=config, 
             model_args=model_args,
     )
@@ -134,14 +136,14 @@ def main():
             examples['rewrite'],
             max_length=data_args.max_q_seq_length,
             truncation=True,
-            padding=True if data_args.pad_to_max_length else False,
+            padding=data_args.pad_to_strategy,
         )
 
         features_passage = tokenizer(
             examples['passage'],
             max_length=data_args.max_p_seq_length,
             truncation=True,
-            padding=True if data_args.pad_to_max_length else False,
+            padding=data_args.pad_to_strategy,
         )
 
         features['query_input_ids'] = features['input_ids']
@@ -171,9 +173,18 @@ def main():
             ['input_ids', 'attention_mask', 'token_type_ids']
     )
 
+    # [CHECK]
+    for data in dataset['train']:
+        print(data['query_input_ids'])
+        print(len(data['query_input_ids']))
+    
+
+
     # data collator (transform the datset into the training mini-batch)
     # [TODO] It should be the customized data collator
-    data_collator = DefaultDataCollator(return_tensors="pt",)
+    data_collator = DefaultDataCollator(
+            return_tensors="pt",
+    )
 
     # Trainer
     trainer = AlbertTrainer(
