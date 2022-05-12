@@ -1,5 +1,5 @@
 import os
-from typing import Optional, Union
+from typing import Optional, Union, Dict, Any
 import collections
 import collections
 import torch
@@ -84,6 +84,7 @@ class AlbertForTextRanking(AlbertPreTrainedModel):
         ranking_label = torch.arange(
                 query_reprs.size(0),
                 device=self.device, 
+                dtype=ranking_label.dtype
         )
         ranking_loss_fct = CrossEntropyLoss()
         ranking_loss = ranking_loss_fct(ranking_logit, ranking_label)
@@ -177,6 +178,29 @@ class AlbertForTextRanking(AlbertPreTrainedModel):
         #     return {"probabilities": probabilities[:, :, 1].detach(), # shape: (batch, length)
         #             "active_predictions": predictions.detach(),
         #             "active_tokens": active_tokens}
+
+    def estimate_tokens(self, input_dict: Dict[str, Union[torch.Tensor, Any]]) -> int:
+        """
+        Helper function to estimate the total number of tokens from the model inputs.
+        Args:
+            inputs (`dict`): The model inputs.
+        Returns:
+            `int`: The total number of tokens.
+        """
+        if not hasattr(self, "warnings_issued"):
+            self.warnings_issued = {}
+        # For the biencoder, separate to input into query's and passage's tokens
+        try:
+            return input_dict['query_input_ids'].numel() + input_dict['passage_input_ids'].numel()
+        except:
+            if self.main_input_name in input_dict:
+                return input_dict[self.main_input_name].numel()
+            elif "estimate_tokens" not in self.warnings_issued:
+                logger.warning(
+                    "Could not estimate the number of tokens of the input, floating-point operations will not be computed"
+                )
+                self.warnings_issued["estimate_tokens"] = True
+            return 0
 
     @classmethod
     def from_pretrained(cls, pretrained_model_name_or_path: Optional[Union[str, os.PathLike]], *model_args, **kwargs):

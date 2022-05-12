@@ -32,8 +32,8 @@ from datasets import load_dataset, DatasetDict
 from models import AlbertForTextRanking
 from trainers import AlbertTrainer
 
-# import os
-# os.environ["WANDB_DISABLED"] = "true"
+import os
+os.environ["WANDB_DISABLED"] = "true"
 
 # Arguments: (1) Model arguments (2) DataTraining arguments (3)
 @dataclass
@@ -51,7 +51,7 @@ class OurModelArguments:
     pooler_type: str = field(default="cls")
     temp: float = field(default=0.05)
     num_labels: int = field(default=2)
-    project_size: float = field(default=128)
+    project_size: float = field(default=64)
     project_dropout_prob: int = field(default=None)
 
 @dataclass
@@ -67,7 +67,7 @@ class OurDataArguments:
     eval_file: Optional[str] = field(default="data/orconvqa/sample.jsonl")
     test_file: Optional[str] = field(default="data/orconvqa/sample.jsonl")
     max_q_seq_length: Optional[int] = field(default=128)
-    max_p_seq_length: Optional[int] = field(default=256)
+    max_p_seq_length: Optional[int] = field(default=128)
     pad_to_strategy: str = field(default="max_length")
 
 @dataclass
@@ -78,6 +78,7 @@ class OurTrainingArguments(TrainingArguments):
     data_seed: int = field(default=None, metadata={"help": "for data sampler, set as the seed if None"})
     do_train: bool = field(default=False)
     do_eval: bool = field(default=False)
+    max_steps: int = field(default=100)
     save_steps: int = field(default=5000)
     eval_steps: int = field(default=2500)
     evaluation_strategy: Optional[str] = field(default='steps')
