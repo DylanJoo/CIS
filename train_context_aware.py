@@ -30,7 +30,7 @@ from transformers import (
 
 from datasets import load_dataset, DatasetDict
 from models import AlbertForContextAwareTextRanking
-from trainers import AlbertTrainer
+from trainers import AlbertTrainer, AlbertTrainerForConvBatch
 
 import os
 os.environ["WANDB_DISABLED"] = "true"
@@ -205,7 +205,8 @@ def main():
     )
 
     # Trainer
-    trainer = AlbertTrainer(
+    # trainer = AlbertTrainer(
+    trainer = AlbertTrainerForConvBatch(
             model=model, 
             args=training_args,
             train_dataset=dataset['train'],
