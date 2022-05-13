@@ -51,7 +51,7 @@ class OurModelArguments:
     pooler_type: str = field(default="cls")
     temp: float = field(default=0.05)
     num_labels: int = field(default=2)
-    project_size: float = field(default=64)
+    project_size: int = field(default=128)
     project_dropout_prob: int = field(default=None)
 
 @dataclass
@@ -64,11 +64,12 @@ class OurDataArguments:
     preprocessing_num_workers: Optional[int] = field(default=None)
     # Customized arguments
     train_file: Optional[str] = field(default="data/orconvqa/sample.jsonl")
-    eval_file: Optional[str] = field(default="data/orconvqa/sample.jsonl")
-    test_file: Optional[str] = field(default="data/orconvqa/sample.jsonl")
+    eval_file: Optional[str] = field(default="data/orconvqa/dev.jsonl")
+    test_file: Optional[str] = field(default="data/orconvqa/test.jsonl")
     max_q_seq_length: Optional[int] = field(default=128)
     max_p_seq_length: Optional[int] = field(default=128)
     pad_to_strategy: str = field(default="max_length")
+    use_conversational_history: bool = field(default=False, metadata={"help": "for conversationa encoding"}
 
 @dataclass
 class OurTrainingArguments(TrainingArguments):
@@ -82,11 +83,12 @@ class OurTrainingArguments(TrainingArguments):
     save_steps: int = field(default=5000)
     eval_steps: int = field(default=2500)
     evaluation_strategy: Optional[str] = field(default='steps')
-    per_device_train_batch_size: int = field(default=16)
-    per_device_eval_batch_size: int = field(default=16)
+    per_device_train_batch_size: int = field(default=8)
+    per_device_eval_batch_size: int = field(default=8)
     weight_decay: float = field(default=0.0)
     logging_dir: Optional[str] = field(default='./logs')
-    warmup_steps: int = field(default=1000)
+    warmup_ratio: float = field(default=0.1)
+    warmup_steps: int = field(default=0)
     resume_from_checkpiint: Optional[str] = field(default=None)
 
 
@@ -130,11 +132,11 @@ def main():
     )
 
     # Dataset 
-    def prepare_retrieval_pretraining(examples):
+    def prepare_retrieval_pretraining(examples, context=None):
 
         size = len(examples['label'])
         features = tokenizer(
-            examples['rewrite'],
+            examples['rewrite'] if context is None else ,
             max_length=data_args.max_q_seq_length,
             truncation=True,
             padding=data_args.pad_to_strategy,
