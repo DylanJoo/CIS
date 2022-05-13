@@ -592,15 +592,16 @@ class AlbertForTextRanking(AlbertPreTrainedModel):
         return model
 
 
-class AlbertForTextRanking(AlbertPreTrainedModel):
+class AlbertForContextAwareTextRanking(AlbertPreTrainedModel):
     def __init__(self, config, **model_kargs):
-        super(AlbertForTextRanking, self).__init__(config)
+        super(AlbertForContextAwareTextRanking, self).__init__(config)
         # self.num_labels = config.num_labels
         self.config = config
         self.model_args = model_kargs["model_args"]
 
         self.query_encoder = AlbertModel(config)
         self.passage_encoder = AlbertModel(config)
+        self.context_gru = nn.GRU(self.model_args.project_size, self.model_args.project_size, 1, batch_first=True)
         self.query_project = nn.Linear(config.hidden_size, self.model_args.project_size)
         self.passage_project = nn.Linear(config.hidden_size, self.model_args.project_size)
 
@@ -613,48 +614,62 @@ class AlbertForTextRanking(AlbertPreTrainedModel):
 
         self.post_init()
 
-    def inference(self, inputs):
+    def foward_context(self, 
+                       input_ids=None,
+                       attention_mask=None,
+                       token_type_ids=None,
+                       inputs_embeds=None,
+                       output_hidden_states=None,):
 
-        with torch.no_grad():
-            passage_reprs, _ = self.forward_passage(
-                    intput_ids=inputs['passage_input_ids'],
-                    attention_mask=passage_attention_mask,
-                    token_type_ids=passage_token_type_ids
-            )
-        return passage_reprs
+        # first go throught the cross encoder of albert
+        inputs_embeds = self.query_encoder.embeddings(
+                input_ids=input_ids, 
+                token_type_ids=token_type_ids,
+        )
+        context_reprs, _ = self.context_gru(inputs_embeds)
+        context_reprs = torch.cat((
+            torch.zeros((inputs_embeds.size(0), 1, inputs_embeds.size(2))), 
+            context_reprs
+        ), dim=1)
 
+        return context_reprs.transpose(0, 1)
 
     def forward(self, 
-                query_input_ids=None, passage_input_ids=None, 
-                query_attention_mask=None, passage_attention_mask=None,
-                query_token_type_ids=None, passage_token_type_ids=None,
+                query_input_ids=None, query_attention_mask=None, query_token_type_ids=None, 
+                passage_input_ids=None, passage_attention_mask=None, passage_token_type_ids=None,
+                utterance_input_ids=None, utterance_attention_mask=None, utterance_token_type_ids=None,
+                context_input_ids=None, context_attention_mask=None, context_token_type_ids=None,
                 ranking_label=None, return_dict=None):
-        f"""
-        Bi-encoder architecture with two albert, for query and passage respectively
-        first obtain the representations of each, then compute the inner product
-        """
 
-        return_dict = return_dict if return_dict is not None else self.config.use_return_dict
+        utterance_reprs, _ = self.forward_query(
+                input_ids=utterance_input_ids,
+                attention_mask=utterance_attention_mask,
+                token_type_ids=utterance_token_type_ids,
+        )
+        context_reprs = self.foward_context(
+                input_ids=context_input_ids,
+                attention_mask=context_attention_mask,
+                token_type_ids=context_token_type_ids,
+        )
+        query_reprs_seq = context_reprs + utterance_reprs
 
-        # (1) Retrieval pre-training (text ranking task) ...
-        # (2) Fine-tunning query encoder 
-
-        # Getting the reduced vector (distinct to hidden size)
+        # The rewrite representation
         if query_input_ids is not None:
             query_reprs, query_outputs = self.forward_query(
                     input_ids=query_input_ids,
                     attention_mask=query_attention_mask,
                     token_type_ids=query_token_type_ids,
             )
-
         if passage_input_ids is not None:
             passage_reprs, passage_outputs = self.forward_passage(
                     input_ids=passage_input_ids,
                     attention_mask=passage_attention_mask,
                     token_type_ids=passage_token_type_ids,
             )
-            passage_reprs_t = passage_reprs.transpose(0, 1) # transpose it for further matmul
-        
+            passage_reprs_t = passage_reprs.transpose(0, 1)
+
+        ranking_loss = 0
+        conversation_loss = 0
         ranking_logit = torch.matmul(query_reprs, passage_reprs_t)
         ranking_label = torch.arange(
                 query_reprs.size(0),
@@ -671,6 +686,7 @@ class AlbertForTextRanking(AlbertPreTrainedModel):
             hidden_states=query_outputs.hidden_states,
             attentions=query_outputs.attentions,
         )
+        return 0
 
     def forward_query(self,
                       input_ids=None,

@@ -13,14 +13,18 @@ args = parser.parse_args()
 
 def sort_history(questions_and_responses, window_size,
                  question_prefix="", response_prefix="", 
-                 turn_delimiter="", context_delimiter=""):
+                 turn_delimiter="", context_delimiter="",
+                 use_response=False):
 
     history = list()
 
     for turn in questions_and_responses:
         question = turn['question']
         response = turn['answer']['text']
-        history.append(f'{question_prefix}{question.strip()} {response_prefix}{response.strip()}')
+        if use_response:
+            history.append(f'{question_prefix}{question.strip()} {response_prefix}{response.strip()}')
+        else:
+            history.append(f'{question_prefix}{question.strip()}')
 
     # history = history[None:]
     history = f"{turn_delimiter}".join(history)
@@ -35,18 +39,28 @@ def main(args):
         example = json.loads(line.strip())
     
         # arange history questions and responses
-
         context_history = sort_history(
                 questions_and_responses=example['history'],
                 window_size=args.window_size,
                 question_prefix="[Q]: ", response_prefix=" [A]: ",
-                turn_delimiter=" ||| ", context_delimiter=""
+                turn_delimiter=" ||| ", context_delimiter="",
+                use_response=True
+        )
+
+        question_history = sort_history(
+                questions_and_responses=example['history'],
+                window_size=args.window_size,
+                question_prefix="[Q]: ", response_prefix=" [A]: ",
+                turn_delimiter=" ||| ", context_delimiter="",
+                use_response=False
         )
 
         # [TODO] alternative negative sampling approach
         for i, (psg, lbl) in enumerate(zip(example['evidences'], example['retrieval_labels'])):
             example_json = {
                     "history": context_history,
+                    "last_history": context_history.rsplit(" ||| ")[-1],
+                    "question_history": question_history,
                     "question": example['question'],
                     "rewrite": example['rewrite'],
                     "passage": psg.strip(),

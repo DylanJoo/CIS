@@ -1,6 +1,6 @@
 logs/*
 wandb/*
-data/*.json
-data/*.jsonl
-data/*.txt
+*.json
+*.jsonl
+*.txt
 __pycache__*
