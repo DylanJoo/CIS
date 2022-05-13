@@ -87,14 +87,17 @@ def main(args):
         }
 
         # Check the compensate or truncate the over-length conversation data
-        if turn_id <= args.n_turns_aligned:
-            if turn_id < topic_count[topic_id]:
-                fout.write(json.dumps(example_json) + '\n')
-                test_dict[topic_id] += 1
-            else:
-                for _ in range(args.n_turns_aligned - turn_id + 1):
+        if args.n_turns_aligned not None:
+            if turn_id <= args.n_turns_aligned:
+                if turn_id < topic_count[topic_id]:
                     fout.write(json.dumps(example_json) + '\n')
                     test_dict[topic_id] += 1
+                else:
+                    for _ in range(args.n_turns_aligned - turn_id + 1):
+                        fout.write(json.dumps(example_json) + '\n')
+                        test_dict[topic_id] += 1
+        else:
+            fout.write(json.dumps(example_json) + '\n')
 
         # negative samples
         if args.negative_sampling == "all":
