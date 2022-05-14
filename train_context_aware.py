@@ -70,7 +70,7 @@ class OurDataArguments:
     max_p_seq_length: Optional[int] = field(default=128)
     max_c_seq_length: Optional[int] = field(default=128)
     pad_to_strategy: str = field(default="max_length")
-    use_conversational_history: str = field(default="last_history", metadata={"help": "e.g. 'history', 'last_history'"})
+    use_conversational_history: str = field(default="last_question", metadata={"help": "e.g. 'history', 'last_history'"})
 
 @dataclass
 class OurTrainingArguments(TrainingArguments):

@@ -601,7 +601,7 @@ class AlbertForContextAwareTextRanking(AlbertPreTrainedModel):
 
         self.query_encoder = AlbertModel(config)
         self.passage_encoder = AlbertModel(config)
-        self.context_gru = nn.GRU(self.model_args.project_size, self.model_args.project_size, 1, batch_first=True)
+        self.context_gru = nn.GRU(self.model_args.project_size, self.model_args.project_size)
         self.query_project = nn.Linear(config.hidden_size, self.model_args.project_size)
         self.passage_project = nn.Linear(config.hidden_size, self.model_args.project_size)
 
@@ -614,25 +614,13 @@ class AlbertForContextAwareTextRanking(AlbertPreTrainedModel):
 
         self.post_init()
 
-    def foward_context(self, 
-                       input_ids=None,
-                       attention_mask=None,
-                       token_type_ids=None,
-                       inputs_embeds=None,
-                       output_hidden_states=None,):
+    def foward_context(self, inputs_embeds=None):
 
         # first go throught the cross encoder of albert
-        inputs_embeds = self.query_encoder.embeddings(
-                input_ids=input_ids, 
-                token_type_ids=token_type_ids,
-        )
-        context_reprs, _ = self.context_gru(inputs_embeds)
-        context_reprs = torch.cat((
-            torch.zeros((inputs_embeds.size(0), 1, inputs_embeds.size(2))), 
-            context_reprs
-        ), dim=1)
+        inputs_embeds = inputs_embeds[:, None, :] # (B(seq-of-turn), 1(batch in gru), H)
+        context_reprs_recurrent, _ = self.context_gru(inputs_embeds) 
 
-        return context_reprs.transpose(0, 1)
+        return torch.squeeze(context_reprs_recurrent) # (B, H)
 
     def forward(self, 
                 query_input_ids=None, query_attention_mask=None, query_token_type_ids=None, 
@@ -646,12 +634,18 @@ class AlbertForContextAwareTextRanking(AlbertPreTrainedModel):
                 attention_mask=utterance_attention_mask,
                 token_type_ids=utterance_token_type_ids,
         )
-        context_reprs = self.foward_context(
+        context_reprs, _ = self.forward_query(
                 input_ids=context_input_ids,
                 attention_mask=context_attention_mask,
                 token_type_ids=context_token_type_ids,
         )
-        query_reprs_seq = context_reprs + utterance_reprs
+        context_reprs_rnn = self.foward_context(
+                inputs_embeds=context_reprs, # (B(seq-of-turn) x H)
+                attention_mask=context_attention_mask,
+                token_type_ids=context_token_type_ids,
+        )
+        # Enhanced query representation of utterance and context
+        query_reprs_rnn = context_reprs_rnn + utterance_reprs
 
         # The rewrite representation
         if query_input_ids is not None:
@@ -668,14 +662,17 @@ class AlbertForContextAwareTextRanking(AlbertPreTrainedModel):
             )
             passage_reprs_t = passage_reprs.transpose(0, 1)
 
+
         ranking_loss = 0
         conversation_loss = 0
-        ranking_logit = torch.matmul(query_reprs, passage_reprs_t)
-        ranking_label = torch.arange(
-                query_reprs.size(0),
+
+        ranking_logit = torch.matmul(query_reprs_seq, passage_reprs_t)
+        ranking_label[ranking_label == 1] = torch.arange(
+                sum(ranking_label == 1)# query_reprs.size(0),
                 device=self.device, 
                 dtype=ranking_label.dtype
         )
+        # compensate example removed
         ranking_loss_fct = CrossEntropyLoss()
         ranking_loss = ranking_loss_fct(ranking_logit, ranking_label)
 
@@ -686,7 +683,6 @@ class AlbertForContextAwareTextRanking(AlbertPreTrainedModel):
             hidden_states=query_outputs.hidden_states,
             attentions=query_outputs.attentions,
         )
-        return 0
 
     def forward_query(self,
                       input_ids=None,

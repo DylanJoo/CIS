@@ -6,10 +6,10 @@ from collections import Counter
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-input", "--path_input_file", default="orconvqa/train.txt")
-parser.add_argument("-output", "--path_output_file", default="train.jsonl")
+parser.add_argument("-output", "--path_output_file", default="orconvqa/train.jsonl")
 parser.add_argument("-window", "--window_size", type=int, default=None)
-parser.add_argument("-negative", "--negative_sampling", default="only_pos")
-parser.add_argument("-n_turns", "--n_turns_aligned", type=int, default=8)
+parser.add_argument("-sampling", "--sampling", default='only_pos')
+parser.add_argument("-n_turns", "--n_turns_aligned", type=int, default=None)
 args = parser.parse_args()
 
 
@@ -75,44 +75,50 @@ def main(args):
                 use_response=False
         )
 
-        # Positive sample 
-        example_json = {
-                "history": context_history,
-                "last_history": context_history.rsplit(" ||| ")[-1],
-                "question_history": question_history,
-                "question": example['question'],
-                "rewrite": example['rewrite'],
-                "passage": example['evidences'][example['retrieval_labels'].index(1)].strip(),
-                "label": 1
-        }
+        # Positive sample and negative samples
+        for i, (psg, lbl) in enumerate(zip(example['evidences'], example['retrieval_labels'])):
 
-        # Check the compensate or truncate the over-length conversation data
-        if args.n_turns_aligned not None:
-            if turn_id <= args.n_turns_aligned:
-                if turn_id < topic_count[topic_id]:
-                    fout.write(json.dumps(example_json) + '\n')
-                    test_dict[topic_id] += 1
-                else:
-                    for _ in range(args.n_turns_aligned - turn_id + 1):
-                        fout.write(json.dumps(example_json) + '\n')
-                        test_dict[topic_id] += 1
-        else:
-            fout.write(json.dumps(example_json) + '\n')
-
-        # negative samples
-        if args.negative_sampling == "all":
-            neg_indices = [i for i, (lbl, psg) in enumerate(zip(example['evidences'], example['retrieval_labels']))]
-            for neg_idx in neg_indices:
+            if args.sampling == 'all':
                 example_json = {
                         "history": context_history,
                         "last_history": context_history.rsplit(" ||| ")[-1],
                         "question_history": question_history,
                         "question": example['question'],
                         "rewrite": example['rewrite'],
-                        "passage": example['evidences'][neg_idx].strip(),
-                        "label": 0
+                        "passage": psg.strip(),
+                        "label": int(lbl)
                 }
                 fout.write(json.dumps(example_json) + '\n')
+                test_dict[topic_id] += 1
+
+            elif args.sampling == 'only_pos' and int(lbl) == 1:
+                example_json = {
+                        "history": context_history,
+                        "last_history": context_history.rsplit(" ||| ")[-1],
+                        "question_history": question_history,
+                        "question": example['question'],
+                        "rewrite": example['rewrite'],
+                        "passage": psg.strip(),
+                        "label": int(lbl)
+                }
+                if args.n_turns_aligned is not None and test_dict[topic_id] >= args.n_turns_aligned:
+                    pass
+                else:
+                    fout.write(json.dumps(example_json) + '\n')
+                    test_dict[topic_id] += 1
+
+        if args.n_turns_aligned is not None:
+            # check if the turn over the pre-defined
+            if turn_id <= args.n_turns_aligned:
+                if turn_id >= topic_count[topic_id]:
+                    example_json.update({
+                        'label': -100, # no loss
+                        "question": "", "rewrite": "", "passage": "", 
+                        "last_history": "", "question_history": "", "history": ""
+                    })
+                    for _ in range(args.n_turns_aligned - turn_id):
+                        fout.write(json.dumps(example_json) + '\n')
+                        test_dict[topic_id] += 1
 
     print(f'Processed {len(topic_count)} topics and {sum(topic_count.values())} in total')
     print(f'Original distribution of turns in topic: {Counter(topic_count.values())}')

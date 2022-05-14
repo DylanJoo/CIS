@@ -9,6 +9,9 @@ import torch
 from typing import Iterator, Iterable, Optional, Sequence, List, TypeVar, Generic, Sized, Union
 from torch.utils.data import Sampler
 from transformers import Trainer
+from transformers.trainer_utils import has_length
+
+_is_torch_generator_available = False
 
 class AlbertTrainer(Trainer):
 
@@ -120,7 +123,9 @@ class RandomBatchSequetialSampler(Sampler[int]):
         # RandomSampler
         # return iter(range(n))
         n = len(self.data_source)
-        batch_list = range(0, n)[start:end] for zip(range(0, n, batch_size), range(batch_size, n+batch_size, batch_size))
+        batch_list = [
+                lust(range(0, n))[s:e] for s, e in zip(range(0, n, batch_size), range(batch_size, n+batch_size, batch_size))
+        ]
         rbss_list = list()
 
         if self.generator is None:
@@ -133,8 +138,8 @@ class RandomBatchSequetialSampler(Sampler[int]):
         # permutation
         for i in torch.randperm(len(batch_list), generator=generator).tolist():
             rbss_list += batch_list[i]
-        
-         return iter(rbss_list)
+
+        return iter(rbss_list)
 
     def __len__(self) -> int:
         return self.num_samples
