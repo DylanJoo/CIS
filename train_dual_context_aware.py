@@ -29,7 +29,7 @@ from transformers import (
 )
 
 from datasets import load_dataset, DatasetDict
-from models import AlbertForContextAwareTextRanking
+from models import AlbertForDualContextAwareTextRanking
 from trainers import AlbertTrainer, AlbertTrainerForConvBatch
 
 import os
@@ -63,14 +63,16 @@ class OurDataArguments:
     validation_split_percentage: Optional[int] = field(default=5)
     preprocessing_num_workers: Optional[int] = field(default=None)
     # Customized arguments
-    train_file: Optional[str] = field(default="data/train.jsonl")
-    eval_file: Optional[str] = field(default="data/sample.jsonl")
-    test_file: Optional[str] = field(default="data/sample.jsonl")
+    train_file: Optional[str] = field(default="data/orconvqa/sample.jsonl")
+    eval_file: Optional[str] = field(default="data/orconvqa/sample.jsonl")
+    test_file: Optional[str] = field(default="data/orconvqa/sample.jsonl")
     max_q_seq_length: Optional[int] = field(default=64)
     max_p_seq_length: Optional[int] = field(default=128)
+    max_r_seq_length: Optional[int] = field(default=128)
     max_c_seq_length: Optional[int] = field(default=128)
     pad_to_strategy: str = field(default="max_length")
-    use_conversational_history: str = field(default="last_question", metadata={"help": "e.g. 'history', 'last_history'"})
+    use_context: str = field(default=None, metadata={"help": "e.g. 'history', 'last_history'"})
+    use_cross_context: str = field(default=None, metadata={"help": "e.g. 'history', 'last_history'"})
 
 @dataclass
 class OurTrainingArguments(TrainingArguments):
@@ -126,18 +128,18 @@ def main():
     tokenizer = AutoTokenizer.from_pretrained(model_args.tokenizer_name, **tokenizer_kwargs)
 
     # model 
-    model = AlbertForContextAwareTextRanking.from_pretrained(
+    model = AlbertForDualContextAwareTextRanking.from_pretrained(
             pretrained_model_name_or_path=model_args.model_name_or_path,
             config=config, 
             model_args=model_args,
     )
 
     # Dataset 
-    def prepare_retrieval_pretraining(examples, context=None):
+    def prepare_retrieval_pretraining(examples, context=None, cross=None):
 
         size = len(examples['label'])
         features = tokenizer(
-            examples['rewrite'],
+            examples['question'],
             max_length=data_args.max_q_seq_length,
             truncation=True,
             padding=data_args.pad_to_strategy,
@@ -158,24 +160,45 @@ def main():
 
         if context:
             features_context = tokenizer(
-                examples[context],
-                max_length=data_args.max_c_seq_length,
-                truncation=True,
-                padding=data_args.pad_to_strategy,
-            )
-            features['context_input_ids'] = features_context['input_ids']
-            features['context_attention_mask'] = features_context['attention_mask']
-            features['context_token_type_ids'] = features_context['token_type_ids']
-
-            features_context = tokenizer(
-                examples['question'],
+                examples['utterance'],
                 max_length=data_args.max_q_seq_length,
                 truncation=True,
                 padding=data_args.pad_to_strategy,
             )
             features['utterance_input_ids'] = features_context['input_ids']
             features['utterance_attention_mask'] = features_context['attention_mask']
-            features['utterance;_token_type_ids'] = features_context['token_type_ids']
+            features['utterance_token_type_ids'] = features_context['token_type_ids']
+            if cross:
+                features_context = tokenizer(
+                    examples[f'{context}'],
+                    max_length=data_args.max_c_seq_length,
+                    truncation=True,
+                    padding=data_args.pad_to_strategy,
+                )
+                features['context_input_ids'] = features_context['input_ids']
+                features['context_attention_mask'] = features_context['attention_mask']
+                features['context_token_type_ids'] = features_context['token_type_ids']
+            else:
+                features_context = tokenizer(
+                    examples[f'{context}_question'],
+                    max_length=data_args.max_q_seq_length,
+                    truncation=True,
+                    padding=data_args.pad_to_strategy,
+                )
+                features['context_q_input_ids'] = features_context['input_ids']
+                features['context_q_attention_mask'] = features_context['attention_mask']
+                features['context_q_token_type_ids'] = features_context['token_type_ids']
+
+                features_context = tokenizer(
+                    examples[f'{context}_response'],
+                    max_length=data_args.max_r_seq_length,
+                    truncation=True,
+                    padding=data_args.pad_to_strategy,
+                )
+                features['context_r_input_ids'] = features_context['input_ids']
+                features['context_r_attention_mask'] = features_context['attention_mask']
+                features['context_r_token_type_ids'] = features_context['token_type_ids']
+
 
         return features
 
@@ -188,15 +211,21 @@ def main():
     ## Preprocessing: training dataset and evaliatopm dataset
     dataset = dataset.map(
             function=prepare_retrieval_pretraining,
-            fn_kwargs={'context': data_args.use_conversational_history},
+            fn_kwargs={'context': data_args.use_context, 'cross': data_args.use_cross_context},
             batched=True,
-            remove_columns=['history', 'question', 'passage', 'rewrite'],
+            remove_columns=['history', 'question', 'passage', 'utterance'],
             num_proc=multiprocessing.cpu_count(),
             load_from_cache_file=not data_args.overwrite_cache,
     )
-    dataset = dataset.remove_columns([
-        'input_ids', 'attention_mask', 'token_type_ids', 'label', data_args.use_conversational_history
-    ])
+    removed_columns = ['input_ids', 'attention_mask', 'token_type_ids', 'label']
+
+    if data_args.use_context:
+        if data_args.use_cross_context:
+            removed_columns += [data_args.use_context]
+        else:
+            removed_columns += [f'{data_args.use_context}_question', f'{data_args.use_context}_response']
+
+    dataset = dataset.remove_columns(removed_columns)
 
     # data collator (transform the datset into the training mini-batch)
     # [TODO] It should be the customized data collator

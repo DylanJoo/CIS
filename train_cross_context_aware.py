@@ -29,8 +29,8 @@ from transformers import (
 )
 
 from datasets import load_dataset, DatasetDict
-from models import AlbertForTextRanking
-from trainers import AlbertTrainer
+from models import AlbertForCrossContextAwareTextRanking
+from trainers import AlbertTrainer, AlbertTrainerForConvBatch
 
 import os
 os.environ["WANDB_DISABLED"] = "true"
@@ -63,13 +63,14 @@ class OurDataArguments:
     validation_split_percentage: Optional[int] = field(default=5)
     preprocessing_num_workers: Optional[int] = field(default=None)
     # Customized arguments
-    train_file: Optional[str] = field(default="data/orconvqa/sample.jsonl")
-    eval_file: Optional[str] = field(default="data/orconvqa/dev.jsonl")
-    test_file: Optional[str] = field(default="data/orconvqa/test.jsonl")
-    max_q_seq_length: Optional[int] = field(default=128)
+    train_file: Optional[str] = field(default="data/train.jsonl")
+    eval_file: Optional[str] = field(default="data/sample.jsonl")
+    test_file: Optional[str] = field(default="data/sample.jsonl")
+    max_q_seq_length: Optional[int] = field(default=64)
     max_p_seq_length: Optional[int] = field(default=128)
+    max_c_seq_length: Optional[int] = field(default=128)
     pad_to_strategy: str = field(default="max_length")
-    use_conversational_history: str = field(default=None, metadata={"help": "for conversationa encoding"})
+    use_conversational_history: str = field(default="last_history", metadata={"help": "e.g. 'history', 'last_history'"})
 
 @dataclass
 class OurTrainingArguments(TrainingArguments):
@@ -125,7 +126,7 @@ def main():
     tokenizer = AutoTokenizer.from_pretrained(model_args.tokenizer_name, **tokenizer_kwargs)
 
     # model 
-    model = AlbertForTextRanking.from_pretrained(
+    model = AlbertForCrossContextAwareTextRanking.from_pretrained(
             pretrained_model_name_or_path=model_args.model_name_or_path,
             config=config, 
             model_args=model_args,
@@ -135,28 +136,18 @@ def main():
     def prepare_retrieval_pretraining(examples, context=None):
 
         size = len(examples['label'])
-        if context:
-            features = tokenizer(
-                examples[context], examples['utterance'],
-                max_length=data_args.max_q_seq_length,
-                truncation=True,
-                padding=data_args.pad_to_strategy,
-            )
-        else:
-            features = tokenizer(
-                examples['question'],
-                max_length=data_args.max_q_seq_length,
-                truncation=True,
-                padding=data_args.pad_to_strategy,
-            )
-
+        features = tokenizer(
+            examples['question'],
+            max_length=data_args.max_q_seq_length,
+            truncation=True,
+            padding=data_args.pad_to_strategy,
+        )
         features_passage = tokenizer(
             examples['passage'],
             max_length=data_args.max_p_seq_length,
             truncation=True,
             padding=data_args.pad_to_strategy,
         )
-
         features['query_input_ids'] = features['input_ids']
         features['query_attention_mask'] = features['attention_mask']
         features['query_token_type_ids'] = features['token_type_ids']
@@ -164,6 +155,27 @@ def main():
         features['passage_attention_mask'] = features_passage['attention_mask']
         features['passage_token_type_ids'] = features_passage['token_type_ids']
         features['ranking_label'] = examples['label']
+
+        if context:
+            features_context = tokenizer(
+                examples[context],
+                max_length=data_args.max_c_seq_length,
+                truncation=True,
+                padding=data_args.pad_to_strategy,
+            )
+            features['context_input_ids'] = features_context['input_ids']
+            features['context_attention_mask'] = features_context['attention_mask']
+            features['context_token_type_ids'] = features_context['token_type_ids']
+
+            features_context = tokenizer(
+                examples['utterance'],
+                max_length=data_args.max_q_seq_length,
+                truncation=True,
+                padding=data_args.pad_to_strategy,
+            )
+            features['utterance_input_ids'] = features_context['input_ids']
+            features['utterance_attention_mask'] = features_context['attention_mask']
+            features['utterance_token_type_ids'] = features_context['token_type_ids']
 
         return features
 
@@ -182,9 +194,9 @@ def main():
             num_proc=multiprocessing.cpu_count(),
             load_from_cache_file=not data_args.overwrite_cache,
     )
-    dataset = dataset.remove_columns(
-            ['history', 'question_history', 'input_ids', 'attention_mask', 'token_type_ids', 'label']
-    )
+    dataset = dataset.remove_columns([
+        'input_ids', 'attention_mask', 'token_type_ids', 'label', data_args.use_conversational_history
+    ])
 
     # data collator (transform the datset into the training mini-batch)
     # [TODO] It should be the customized data collator
@@ -193,7 +205,8 @@ def main():
     )
 
     # Trainer
-    trainer = AlbertTrainer(
+    # trainer = AlbertTrainer(
+    trainer = AlbertTrainerForConvBatch(
             model=model, 
             args=training_args,
             train_dataset=dataset['train'],

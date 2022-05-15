@@ -66,7 +66,6 @@ def main(args):
                 turn_delimiter=" ||| ", context_delimiter="",
                 use_response=True
         )
-
         question_history = sort_history(
                 questions_and_responses=example['history'],
                 window_size=args.window_size,
@@ -74,6 +73,15 @@ def main(args):
                 turn_delimiter=" ||| ", context_delimiter="",
                 use_response=False
         )
+        last_history = context_history.rsplit(" ||| ")[-1]
+        if len(example['history']) > 0:
+            last_response = f"[A]: {example['history'][-1]['answer']['text'].strip()}"
+            last_question = f"[Q]: {example['history'][-1]['question'].strip()}"
+        else:
+            last_response = ""
+            last_question = ""
+        question = f"[Q]: {example['rewrite'].strip()}"
+        utterance = f"[A]: {example['question'].strip()}"
 
         # Positive sample and negative samples
         for i, (psg, lbl) in enumerate(zip(example['evidences'], example['retrieval_labels'])):
@@ -81,11 +89,13 @@ def main(args):
             if args.sampling == 'all':
                 example_json = {
                         "history": context_history,
-                        "last_history": context_history.rsplit(" ||| ")[-1],
+                        "last_history": last_history,
                         "question_history": question_history,
-                        "question": example['question'],
-                        "rewrite": example['rewrite'],
-                        "passage": psg.strip(),
+                        "last_question": last_question,
+                        "last_response": last_response,
+                        "utterance": utterance,
+                        "question": question,
+                        "passage": f"[D]: {psg.strip()}",
                         "label": int(lbl)
                 }
                 fout.write(json.dumps(example_json) + '\n')
@@ -94,11 +104,13 @@ def main(args):
             elif args.sampling == 'only_pos' and int(lbl) == 1:
                 example_json = {
                         "history": context_history,
-                        "last_history": context_history.rsplit(" ||| ")[-1],
+                        "last_history": last_history,
                         "question_history": question_history,
-                        "question": example['question'],
-                        "rewrite": example['rewrite'],
-                        "passage": psg.strip(),
+                        "last_question": last_question,
+                        "last_response": last_response,
+                        "utterance": utterance,
+                        "question": question,
+                        "passage": f"[D]: {psg.strip()}",
                         "label": int(lbl)
                 }
                 if args.n_turns_aligned is not None and test_dict[topic_id] >= args.n_turns_aligned:
@@ -113,7 +125,8 @@ def main(args):
                 if turn_id >= topic_count[topic_id]:
                     example_json.update({
                         'label': -100, # no loss
-                        "question": "", "rewrite": "", "passage": "", 
+                        "question": "", "utterance": "", "passage": "", 
+                        "last_question": "", "last_response": "",
                         "last_history": "", "question_history": "", "history": ""
                     })
                     for _ in range(args.n_turns_aligned - turn_id):

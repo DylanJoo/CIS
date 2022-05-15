@@ -78,8 +78,12 @@ class AlbertTrainerForConvBatch(Trainer):
             if self.args.world_size <= 1:
                 if _is_torch_generator_available:
                     # return RandomSampler(self.train_dataset, generator=generator)
-                    return RandomBatchSequetialSampler(self.train_dataset, generator=generator)
-                return RandomBatchSequetialSampler(self.train_dataset)
+                    return RandomBatchSequetialSampler(
+                            self.train_dataset, 
+                            generator=generator, 
+                            batch_size=self.args.per_device_train_batch_size
+                    )
+                return RandomBatchSequetialSampler(self.train_dataset, batch_size=self.args.per_device_train_batch_size)
             elif (
                 self.args.parallel_mode in [ParallelMode.TPU, ParallelMode.SAGEMAKER_MODEL_PARALLEL]
                 and not self.args.dataloader_drop_last
@@ -106,11 +110,12 @@ class RandomBatchSequetialSampler(Sampler[int]):
     replacement: bool
 
     def __init__(self, data_source: Sized, replacement: bool = False,
-                 num_samples: Optional[int] = None, generator=None) -> None:
+                 num_samples: Optional[int] = None, generator=None, batch_size=8) -> None:
         self.data_source = data_source
         self.replacement = replacement
         self._num_samples = num_samples
         self.generator = generator
+        self.batch_size = batch_size
 
     @property
     def num_samples(self) -> int:
@@ -124,7 +129,9 @@ class RandomBatchSequetialSampler(Sampler[int]):
         # return iter(range(n))
         n = len(self.data_source)
         batch_list = [
-                lust(range(0, n))[s:e] for s, e in zip(range(0, n, batch_size), range(batch_size, n+batch_size, batch_size))
+                list(range(0, n))[s:e] for s, e in zip(
+                    range(0, n, self.batch_size), range(self.batch_size, n+self.batch_size, self.batch_size)
+                )
         ]
         rbss_list = list()
 
