@@ -1,0 +1,39 @@
+import argparse
+from pyserini.search.lucene import LuceneSearcher
+
+parser = argparse.ArgumentParser()
+parser.add_argument("-k", "--retrieve_k_docs", default=1000, type=int)
+parser.add_argument("-k1", "--k1", default=float(0.9), type=float)
+parser.add_argument("-b", "--b", default=float(0.4), type=float)
+parser.add_argument("-index", "--dir_index", default=None, type=str)
+parser.add_argument("-qid", "--path_qid", default=None, type=str)
+parser.add_argument("-query", "--path_qtext", default='sample_queries.tsv', type=str)
+parser.add_argument("-output", "--path_output", default='run.sample.txt', type=str)
+args = parser.parse_args()
+
+def search(args):
+    # Lucuene initialization
+    searcher = LuceneSearcher(args.dir_index)
+    searcher.set_bm25(k1=args.k1, b=args.b)
+
+    # Load query text and query ids
+    if args.path_qid:
+        query_text = open(args.path_qtext, 'r').read().splitlines()
+        query_id = open(args.path_qid, 'r').read().splitlines()
+        query_file = zip(query_id, query_text)
+    else:
+        query_file = [(i.split('\t')) for i in open(args.path_qtext, 'r').read().splitlines()]
+
+    # Prepare the output file
+    output = open(args.path_output, 'w')
+
+    # search for each q
+    for qi, (index, text) in enumerate(query_file):
+        hits = searcher.search(text.strip(), k=args.retrieve_k_docs)
+        for i in range(len(hits)):
+            output.write(f'{index} Q0 {hits[i].docid:4} {i+1} {hits[i].score:.5f} pyserini\n')
+        if qi % 100 == 0:
+            print(f'{qi+1} query retrieved ...')
+
+search(args)
+print("Done")

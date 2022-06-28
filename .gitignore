@@ -1,6 +1,23 @@
-logs/*
-wandb/*
-*.json
-*.jsonl
-*.txt
-__pycache__*
+# raw data
+data/msmarco-psgs/
+data/trec-car/
+data/trec-car+marco-psg/
+
+# data
+convir_data/*
+data/canard/*.json
+data/quac/*.json
+
+# dpr
+dpr/encoded/
+dpr/faiss-indexes/
+
+# spr
+spr/indexes/
+spr/runs/
+
+# dpr-convir
+dpr-convir/logs/
+dpr-convir/wandb/
+
+__pycache__/
