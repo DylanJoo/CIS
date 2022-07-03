@@ -33,6 +33,8 @@ passages = load_collections(
 )
 
 
+# set seed
+random.seed(777)
 # count = collections.defaultdict(list)
 fout = open(args.convir_dataset, 'w')
 

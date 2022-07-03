@@ -1,4 +1,6 @@
-python3 train.py \
+python3 xla_spawn.py \
+  --num_cores 8 \
+  train.py \
   --model_name_or_path bert-base-uncased \
   --config_name bert-base-uncased \
   --output_dir ./checkpoints/samples \

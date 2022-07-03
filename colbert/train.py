@@ -44,6 +44,8 @@ class OurModelArguments:
     # Cutomized arguments
     colbert_type: Optional[str] = field(default="colbert")
     dim: Optional[int] = field(default=128)
+    kd_teacher_model_name_or_path: Optional[str] = field(\
+            default="castorini/tct_colbert-v2-hnp-msmarco-r2")
     # pooler_type: str = field(default="cls")
     # temp: float = field(default=0.05)
 
@@ -81,6 +83,7 @@ class OurTrainingArguments(TrainingArguments):
     warmup_ratio: float = field(default=0.1)
     warmup_steps: int = field(default=0)
     resume_from_checkpoint: Optional[str] = field(default=None)
+    learning_rate: float = field(default=5e-5)
 
 def main():
 
@@ -106,16 +109,19 @@ def main():
     tokenizer = AutoTokenizer.from_pretrained(model_args.tokenizer_name, **tokenizer_kwargs)
 
     # model 
+    model_teacher = TctColBert.from_pretrained(
+            pretrained_model_name_or_path=model_args.kd_teacher_model_name_or_path,
+            config=config,
+            colbert_type='colbert-inbatch',
+    ) if model_args.colbert_type == 'tctcolbert' else None
+
     model_kwargs = {
             'dim': model_args.dim,
             'similarity_metric': 'cosine', 
             'mask_punctuation': True,
-            'kd_teacher': None, 
+            'kd_teacher': model_teacher, 
             'colbert_type': model_args.colbert_type
     }
-            # 'query_maxlen': data_args.max_q_seq_length,
-            # 'doc_maxlen': data_args.max_p_seq_length,
-
     model = TctColBert.from_pretrained(
             pretrained_model_name_or_path=model_args.model_name_or_path,
             config=config,

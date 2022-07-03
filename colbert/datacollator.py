@@ -14,7 +14,7 @@ def rename_inputs(x, prefix=""):
 
 def stack_inputs(x, rep=2):
     for k in x:
-        x.update({k: x[k]*2})
+        x.update({k: x[k]*rep})
     return 0
 
 def merge_inputs(qx, dx):

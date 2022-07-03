@@ -25,6 +25,8 @@ class TctColBert(BertPreTrainedModel):
         # self.query_maxlen = kwargs.pop('query_maxlen', 32)
         # self.doc_maxlen = kwargs.pop('doc_maxlen', 128)
         self.dim = kwargs.pop('dim', 128)
+        self.gamma = kwargs.pop('gamma', 0.1)
+        self.temperature = kwargs.pop('temperature', 0.25)
         # use for knowledge distilation
         self.similarity_metric = kwargs.pop('similarity_metric', 'cosine')
 
@@ -85,7 +87,7 @@ class TctColBert(BertPreTrainedModel):
             D = self.colbert_pooler(d.last_hidden_state, mask=d_mask, keep_dims=keep_d_dims)
 
             ## ColBert stanrd loss (pairwise loss)
-            scores_colbert = self.pairwise_score(Q, D)  # (2*B, 1)
+            scores_colbert = self.pairwise_score(Q, D)  # (2*B 1)
             loss = PairwiseCELoss(scores_colbert)
             return {'score': scores_colbert, 'loss': loss}
 
@@ -99,24 +101,27 @@ class TctColBert(BertPreTrainedModel):
             return {'score': scores_colbert_inbatch, 'loss': loss}
 
         # TctColbert
-        if self.kd_teacher is not None:
+        if self.colbert_type == 'tctcolbert':
             ## TctColBert: Knowledge distillation loss (in-batch KL divergence)
-            q = self.avg_pooler(q.last_hidden_state)
-            d = self.avg_pooler(d.last_hidden_state)
-            scores_inbatch_s = q @ d.permute(1, 0)
-            scores_inbatch_t = self.kd_teacher.forward(
-                q_input_ids,
-                q_attention_mask,
-                q_token_type_ids,
-                d_input_ids,
-                d_attention_mask,
-                d_token_type_ids,
-                **kwargs
-            )['scores']
-            loss_1 = InBatchNegativeCELoss(score_inbatch_s)
-            loss_2 = InBatchKLLoss(scores_inbatch_s, scores_inbatch_t)
+            ### student
+            Q = self.avg_pooler(q.last_hidden_state)
+            D = self.avg_pooler(d.last_hidden_state)
+            scores_inbatch_s = Q @ D.permute(1, 0) # (B 2*B)
+            ### teacher
+            with torch.no_grad():
+                scores_inbatch_t = self.kd_teacher.forward(
+                    q_input_ids,
+                    q_attention_mask, 
+                    q_token_type_ids,
+                    d_input_ids,
+                    d_attention_mask,
+                    d_token_type_ids,
+                    **kwargs
+                )['score']
+            loss = InBatchNegativeCELoss(scores_inbatch_s)
+            loss_kl = InBatchKLLoss(scores_inbatch_s, scores_inbatch_t, self.temperature)
 
-            return {'score': scores_inbatch_s, 'loss': 0.1*loss_1 + (1-0.1)*loss_2}
+            return {'score': scores_inbatch_s, 'loss': self.gamma*loss + (1-self.gamma)*loss_kl}
 
     def pairwise_score(self, Q, D):
         """ Max sim operator for pairwise loss
@@ -156,7 +161,7 @@ class TctColBert(BertPreTrainedModel):
         return X
     
     def avg_pooler(self, tokens_last_hidden): # (B Lq H) -> (B H)
-        return torch.mean(tokens_last_hidden[:, 4:, :], dim=-2) 
+        return torch.mean(tokens_last_hidden[:, 4:, :], dim=-2)
         # embeddings = tokens_last_hidden
         # return np.average(embeddings[:, 4:, :], axis=-2) # B H
 

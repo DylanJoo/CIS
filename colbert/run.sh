@@ -1,0 +1,20 @@
+python3 train.py \
+  --resume_from_checkpoint ./checkpoints/colbertv2.0 \
+  --kd_teacher_model_name_or_path ./checkpoints/colbertv2.0 \
+  --model_name_or_path bert-base-uncased \
+  --config_name bert-base-uncased \
+  --output_dir ./checkpoints/tctcolbert.msmarco.psg \
+  --train_file ../data/train.triples.sample.jsonl \
+  --eval_file ../data/train.triples.sample.jsonl \
+  --max_q_seq_length 32 \
+  --max_p_seq_length 150 \
+  --colbert_type 'tctcolbert' \
+  --dim 128 \
+  --remove_unused_columns false \
+  --per_device_train_batch_size 96 \ # in tct colbert
+  --evaluation_strategy 'steps'\
+  --max_steps 100 \
+  --save_steps 100 \
+  --eval_steps 50 \
+  --do_train \
+  --do_eval

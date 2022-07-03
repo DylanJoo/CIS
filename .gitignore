@@ -14,7 +14,8 @@ data/quac/*.json
 data/rel_collections/
 
 # checkpoints
-dpr-convir/checkpoints/
+cqe/checkpoints/
+colbert/checkpoints/
 
 # dpr
 dpr/encoded/
@@ -30,8 +31,13 @@ spr/indexes/
 spr/runs/
 
 # dpr-convir
-dpr-convir/logs/
-dpr-convir/wandb/
+cqe/logs/
+cqe/wandb/
+
+# dpr-colbert
+colbert/logs/
+colbert/wandb/
+
 
 __pycache__/
-
+*.swp
