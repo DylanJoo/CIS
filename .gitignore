@@ -5,6 +5,8 @@ data/trec-car+marco-psg/
 
 # data
 convir_data/
+!convir_data/train.triples.sample.jsonl
+!convir_data/sample.jsonl
 !convir_data/dataset_description.md
 data/archived/
 data/canard/*.json
