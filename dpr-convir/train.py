@@ -1,18 +1,12 @@
 """
-First-step training for albert model (further pretraining)
+Codes for finetunning ColBert model
 
-Training functions for sentence highlighting, 
-which includes two methods based on deep NLP pretrained models.
+Includes following setups
+- ColBert with pairwise loss (following instructions from original paper)
+- COlBert with in-bathch negatives loss
 
-Backbone Models:
-    (1) albert-base-v2
-
-Methods:
-    (1) Further pretraining: Passage ranking task adaptive finetunning
-
-Packages requirments:
-    - hugginface 
-    - datasets 
+Backbone models
+- bert-base-uncased
 """
 import sys
 import multiprocessing
@@ -29,8 +23,8 @@ from transformers import (
 )
 
 from datasets import load_dataset, DatasetDict
-from models import AlbertForTextRanking
-from trainers import AlbertTrainer
+from models import TctColBert
+from datacollator import IRTripletCollator
 
 import os
 os.environ["WANDB_DISABLED"] = "true"
@@ -39,20 +33,20 @@ os.environ["WANDB_DISABLED"] = "true"
 @dataclass
 class OurModelArguments:
     # Huggingface's original arguments
-    model_name_or_path: Optional[str] = field(default='albert-base-v2')
-    model_type: Optional[str] = field(default='albert-base-v2')
-    config_name: Optional[str] = field(default='albert-base-v2')
-    tokenizer_name: Optional[str] = field(default='albert-base-v2')
+    model_name_or_path: Optional[str] = field(default='bert-base-uncased')
+    model_type: Optional[str] = field(default='bert-base-uncased')
+    config_name: Optional[str] = field(default='bert-base-uncased')
+    tokenizer_name: Optional[str] = field(default='bert-base-uncased')
     cache_dir: Optional[str] = field(default=None)
     use_fast_tokenizer: bool = field(default=True)
     model_revision: str = field(default="main")
     use_auth_token: bool = field(default=False)
     # Cutomized arguments
-    pooler_type: str = field(default="cls")
-    temp: float = field(default=0.05)
-    num_labels: int = field(default=2)
-    project_size: int = field(default=128)
-    project_dropout_prob: int = field(default=None)
+    # pooler_type: str = field(default="cls")
+    # temp: float = field(default=0.05)
+    # num_labels: int = field(default=2)
+    # project_size: int = field(default=128)
+    # project_dropout_prob: int = field(default=None)
 
 @dataclass
 class OurDataArguments:
@@ -66,10 +60,10 @@ class OurDataArguments:
     train_file: Optional[str] = field(default="data/orconvqa/sample.jsonl")
     eval_file: Optional[str] = field(default="data/orconvqa/dev.jsonl")
     test_file: Optional[str] = field(default="data/orconvqa/test.jsonl")
-    max_q_seq_length: Optional[int] = field(default=128)
+    max_q_seq_length: Optional[int] = field(default=32)
     max_p_seq_length: Optional[int] = field(default=128)
-    pad_to_strategy: str = field(default="max_length")
-    use_conversational_history: str = field(default=None, metadata={"help": "for conversationa encoding"})
+    # pad_to_strategy: str = field(default="max_length")
+    # use_conversational_history: str = field(default=None, metadata={"help": "for conversationa encoding"})
 
 @dataclass
 class OurTrainingArguments(TrainingArguments):
@@ -89,17 +83,9 @@ class OurTrainingArguments(TrainingArguments):
     logging_dir: Optional[str] = field(default='./logs')
     warmup_ratio: float = field(default=0.1)
     warmup_steps: int = field(default=0)
-    resume_from_checkpiint: Optional[str] = field(default=None)
-
+    resume_from_checkpoint: Optional[str] = field(default=None)
 
 def main():
-    """
-    (1) Prepare parser with the 3 types of arguments
-        * Detailed argument parser by kwargs
-    (2) Load the corresponding tokenizer and config 
-    (3) Load the self-defined models
-    (4)
-    """
 
     # Parseing argument for huggingface packages
     parser = HfArgumentParser((OurModelArguments, OurDataArguments, OurTrainingArguments))
@@ -114,7 +100,6 @@ def main():
     # config and tokenizers
     # [TODO] Overwrite the initial argument from huggingface
     config_kwargs = {
-            "num_labels": model_args.num_labels,
             "output_hidden_states": True
     }
     tokenizer_kwargs = {
@@ -125,85 +110,51 @@ def main():
     tokenizer = AutoTokenizer.from_pretrained(model_args.tokenizer_name, **tokenizer_kwargs)
 
     # model 
-    model = AlbertForTextRanking.from_pretrained(
+    model_kwargs = {
+            'query_maxlen': 32,
+            'doc_maxlen': 128,
+            'dim': 128, 
+            'similarity_metric': 'cosine', 
+            'mask_punctuation': True,
+            'kd_teacher': None, 
+            'colbert_type': 'colbert-inbatch'
+    }
+
+    model = TctColBert.from_pretrained(
             pretrained_model_name_or_path=model_args.model_name_or_path,
-            config=config, 
-            model_args=model_args,
+            config=config,
+            **model_kwargs
     )
 
     # Dataset 
-    def prepare_retrieval_pretraining(examples, context=None):
-
-        size = len(examples['label'])
-        if context:
-            features = tokenizer(
-                examples[context], examples['utterance'],
-                max_length=data_args.max_q_seq_length,
-                truncation=True,
-                padding=data_args.pad_to_strategy,
-            )
-        else:
-            features = tokenizer(
-                examples['question'],
-                max_length=data_args.max_q_seq_length,
-                truncation=True,
-                padding=data_args.pad_to_strategy,
-            )
-
-        features_passage = tokenizer(
-            examples['passage'],
-            max_length=data_args.max_p_seq_length,
-            truncation=True,
-            padding=data_args.pad_to_strategy,
-        )
-
-        features['query_input_ids'] = features['input_ids']
-        features['query_attention_mask'] = features['attention_mask']
-        features['query_token_type_ids'] = features['token_type_ids']
-        features['passage_input_ids'] = features_passage['input_ids']
-        features['passage_attention_mask'] = features_passage['attention_mask']
-        features['passage_token_type_ids'] = features_passage['token_type_ids']
-        features['ranking_label'] = examples['label']
-
-        return features
-
     ## Loading form json
     dataset = DatasetDict.from_json({
         "train": data_args.train_file,
         "eval": data_args.eval_file
     })
 
-    ## Preprocessing: training dataset and evaliatopm dataset
-    dataset = dataset.map(
-            function=prepare_retrieval_pretraining,
-            fn_kwargs={'context': data_args.use_conversational_history},
-            batched=True,
-            remove_columns=['history', 'question', 'passage', 'utterance'],
-            num_proc=multiprocessing.cpu_count(),
-            load_from_cache_file=not data_args.overwrite_cache,
-    )
-    dataset = dataset.remove_columns(
-            ['history', 'question_history', 'input_ids', 'attention_mask', 'token_type_ids', 'label']
-    )
-
     # data collator (transform the datset into the training mini-batch)
-    # [TODO] It should be the customized data collator
-    data_collator = DefaultDataCollator(
-            return_tensors="pt",
+    ## Preprocessing
+    triplet_collator = IRTripletCollator(
+            tokenizer=tokenizer,
+            query_maxlen=data_args.max_q_seq_length,
+            doc_maxlen=data_args.max_p_seq_length,
+            in_batch_negative=True # False if standard ColBert
     )
 
     # Trainer
-    trainer = AlbertTrainer(
-            model=model, 
+    trainer = Trainer(
+            model=model,
             args=training_args,
             train_dataset=dataset['train'],
             eval_dataset=dataset['eval'],
-            data_collator=data_collator
+            data_collator=triplet_collator
     )
     
     # ***** strat training *****
-    model_path = None #[TODO] parsing the argument model_args.model_name_or_path 
-    results = trainer.train(model_path=model_path)
+    results = trainer.train(
+            resume_from_checkpoint=training_args.resume_from_checkpoint
+    )
 
     return results
 

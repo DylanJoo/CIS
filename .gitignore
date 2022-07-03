@@ -4,13 +4,21 @@ data/trec-car/
 data/trec-car+marco-psg/
 
 # data
-convir_data/*
+convir_data/
+!convir_data/dataset_description.md
+data/archived/
 data/canard/*.json
 data/quac/*.json
+data/rel_collections/
 
 # dpr
 dpr/encoded/
 dpr/faiss-indexes/
+
+# re-ranking
+re-ranking/
+!re-ranking/download.sh
+!re-ranking/data_description.md
 
 # spr
 spr/indexes/
@@ -21,3 +29,4 @@ dpr-convir/logs/
 dpr-convir/wandb/
 
 __pycache__/
+

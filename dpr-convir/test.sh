@@ -1,0 +1,14 @@
+python3 train.py \
+  --model_name_or_path bert-base-uncased \
+  --config_name bert-base-uncased \
+  --output_dir ./checkpoints/test \
+  --train_file ../convir_data/train.triples.sample.jsonl \
+  --eval_file ../convir_data/train.triples.sample.jsonl \
+  --remove_unused_columns false \
+  --per_device_train_batch_size 2 \
+  --max_steps 100 \
+  --save_steps 500 \
+  --eval_steps 500 \
+  --evaluation_strategy 'steps'\
+  --do_train \
+  --do_eval
