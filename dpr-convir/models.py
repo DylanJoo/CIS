@@ -22,8 +22,8 @@ class TctColBert(BertPreTrainedModel):
 
         super(TctColBert, self).__init__(config)
 
-        self.query_maxlen = kwargs.pop('query_maxlen', 32)
-        self.doc_maxlen = kwargs.pop('doc_maxlen', 128)
+        # self.query_maxlen = kwargs.pop('query_maxlen', 32)
+        # self.doc_maxlen = kwargs.pop('doc_maxlen', 128)
         self.dim = kwargs.pop('dim', 128)
         # use for knowledge distilation
         self.similarity_metric = kwargs.pop('similarity_metric', 'cosine')

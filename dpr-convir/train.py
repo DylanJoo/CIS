@@ -42,11 +42,10 @@ class OurModelArguments:
     model_revision: str = field(default="main")
     use_auth_token: bool = field(default=False)
     # Cutomized arguments
+    colbert_type: Optional[str] = field(default="colbert")
+    dim: Optional[int] = field(default=128)
     # pooler_type: str = field(default="cls")
     # temp: float = field(default=0.05)
-    # num_labels: int = field(default=2)
-    # project_size: int = field(default=128)
-    # project_dropout_prob: int = field(default=None)
 
 @dataclass
 class OurDataArguments:
@@ -56,21 +55,19 @@ class OurDataArguments:
     overwrite_cache: bool = field(default=False)
     validation_split_percentage: Optional[int] = field(default=5)
     preprocessing_num_workers: Optional[int] = field(default=None)
-    # Customized arguments
     train_file: Optional[str] = field(default="data/orconvqa/sample.jsonl")
     eval_file: Optional[str] = field(default="data/orconvqa/dev.jsonl")
     test_file: Optional[str] = field(default="data/orconvqa/test.jsonl")
+    # Customized arguments
     max_q_seq_length: Optional[int] = field(default=32)
     max_p_seq_length: Optional[int] = field(default=128)
-    # pad_to_strategy: str = field(default="max_length")
-    # use_conversational_history: str = field(default=None, metadata={"help": "for conversationa encoding"})
 
 @dataclass
 class OurTrainingArguments(TrainingArguments):
     # Huggingface's original arguments. 
     output_dir: str = field(default='./models')
     seed: int = field(default=42)
-    data_seed: int = field(default=None, metadata={"help": "for data sampler, set as the seed if None"})
+    data_seed: int = field(default=None)
     do_train: bool = field(default=False)
     do_eval: bool = field(default=False)
     max_steps: int = field(default=100)
@@ -98,7 +95,6 @@ def main():
         model_args, data_args, training_args = parser.parse_args_into_dataclasses()
 
     # config and tokenizers
-    # [TODO] Overwrite the initial argument from huggingface
     config_kwargs = {
             "output_hidden_states": True
     }
@@ -111,14 +107,14 @@ def main():
 
     # model 
     model_kwargs = {
-            'query_maxlen': 32,
-            'doc_maxlen': 128,
-            'dim': 128, 
+            'dim': model_args.dim,
             'similarity_metric': 'cosine', 
             'mask_punctuation': True,
             'kd_teacher': None, 
-            'colbert_type': 'colbert-inbatch'
+            'colbert_type': model_args.colbert_type
     }
+            # 'query_maxlen': data_args.max_q_seq_length,
+            # 'doc_maxlen': data_args.max_p_seq_length,
 
     model = TctColBert.from_pretrained(
             pretrained_model_name_or_path=model_args.model_name_or_path,
@@ -139,7 +135,7 @@ def main():
             tokenizer=tokenizer,
             query_maxlen=data_args.max_q_seq_length,
             doc_maxlen=data_args.max_p_seq_length,
-            in_batch_negative=True # False if standard ColBert
+            in_batch_negative=(model_args.colbert_type != 'colbert')
     )
 
     # Trainer

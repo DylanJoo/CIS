@@ -11,6 +11,9 @@ data/canard/*.json
 data/quac/*.json
 data/rel_collections/
 
+# checkpoints
+dpr-convir/checkpoints/
+
 # dpr
 dpr/encoded/
 dpr/faiss-indexes/
