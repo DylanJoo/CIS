@@ -1,3 +1,4 @@
+import os
 import collections
 import re
 import argparse
@@ -19,10 +20,12 @@ args = parser.parse_args()
 runs = load_runs(path=args.run)
 queries = load_queries(path=args.queries)
 candidate_document_id_set = [x for sublist in runs.values() for x in sublist]
-collections = load_collections(
-        path=args.corpus, 
-        dir=None,
-)
+if os.path.isdir(args.corpus):
+    collections = load_collections(dir=args.corpus)
+else: 
+    #path
+    collections = load_collections(path=args.corpus)
+
 
 # n_passage = 0
 with open(args.output_text_pair, 'w') as text_pair, open(args.output_id_pair, 'w') as id_pair:

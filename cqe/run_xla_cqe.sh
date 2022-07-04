@@ -5,17 +5,17 @@ python3 xla_spawn.py \
   --kd_teacher_model_name_or_path ./checkpoints/colbertv2.0 \
   --model_name_or_path bert-base-uncased \
   --config_name bert-base-uncased \
-  --output_dir ./checkpoints/tctcolbert.cqe.v0 \
+  --output_dir ./checkpoints/tctcolbertv2-cqe.canard_convir.v0 \
   --train_file ../convir_data/canard_convir.train.triples.cqe.v0.jsonl \
-  --eval_file ../convir_data/dev.triples.sample.jsonl \
+  --eval_file ../convir_data/canard_convir.dev.triples.cqe.v0.jsonl \
   --max_q_seq_length 32 \
-  --max_p_seq_length 128 \
+  --max_p_seq_length 150 \
   --colbert_type 'tctcolbert' \
   --dim 128 \
   --remove_unused_columns false \
-  --per_device_train_batch_size 12 \ # cqe batch size
+  --per_device_train_batch_size 12 \ 
   --evaluation_strategy 'steps'\
-  --learning_rate 7e-6 \ # cqe learning rate
+  --learning_rate 7e-6 \ 
   --max_steps 10000 \
   --save_steps 2500 \
   --eval_steps 2500 \
