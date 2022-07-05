@@ -11,10 +11,15 @@ from transformers import BertPreTrainedModel, BertModel, BertTokenizerFast
 from typing import Optional, Union, Dict, Any
 from loss import InBatchKLLoss, InBatchNegativeCELoss, PairwiseCELoss
 
-class ContextCQE(BertPreTrainedModel):
+class ColBertForLICQE(BertPreTrainedModel):
+    """ColBert for Late-interacted Conversational Query Embeddings.
+    This class provides:
+    (1) Train like ColBert efficiently (In-batch negative Loss)
+    (2) TCT training (In-bathc negative Loss + KL Loss)
+    """
     def __init__(self, config, **kwargs):
 
-        super(TctColBert, self).__init__(config)
+        super(ContextCQE, self).__init__(config)
 
         self.dim = kwargs.pop('dim', 128)
         self.gamma = kwargs.pop('gamma', 0.1)
@@ -80,17 +85,17 @@ class ContextCQE(BertPreTrainedModel):
 
         # ColBert 
         if self.colbert_type == 'colbert-inbatch':
-            C = self.colbert_pool(c.last_hidden_state) # (B Lc H)
-            U = self.colbert_pool(u.last_hidden_state) # (B Lu H)
-            D = self.colbert_pool(d.last_hidden_state, mask=d_mask, keep_dim=keep_d_dim)
+            C = self.colbert_pooler(c.last_hidden_state) # (B Lc H)
+            U = self.colbert_pooler(u.last_hidden_state) # (B Lu H)
+            D = self.colbert_pooler(d.last_hidden_state, mask=d_mask, keep_dims=keep_d_dims)
             Q = torch.cat((C, U), 1) # (B Lq H)
 
-            scores_colbert_context_inbatch = self.inbatch_score(C, U) # (B B)
-            scores_colbert_inbatch = self.inbatch_score(Q, D) # (B 2*B)
-            loss = InBatchNegativeCELoss(scores_colbert_inbatch)
+            scores_context_inbatch = self.inbatch_score(C, U) # (B B)
             loss_context = InBatchNegativeCELoss(scores_context_inbatch)
-            return {'score': scores_colbert_inbatch, 
-                    'context_score': scores_colbert_context_inbatch,
+            scores_inbatch = self.inbatch_score(Q, D) # (B 2*B)
+            loss = InBatchNegativeCELoss(scores_inbatch)
+            return {'score': scores_inbatch, 
+                    'context_score': scores_context_inbatch,
                     'loss': 1*loss + 1*loss_context,}
 
         # TctColbert
@@ -127,20 +132,14 @@ class ContextCQE(BertPreTrainedModel):
                     'context_score': scores_context_inbatch_s, 
                     'loss': self.gamma*(loss+loss_context) + (1-self.gamma)*(loss_kl+loss_context_kl)}
 
-    # def pairwise_score(self, Q, D):
-    #     if self.similarity_metric == 'cosine':
-    #         return (Q @ D.permute(0, 2, 1)).max(2).values.sum(1)
-    #
-    #     assert self.similarity_metric == 'l2'
-    #     return (-1.0 * ((Q.unsqueeze(2) - D.unsqueeze(1))**2).sum(-1)).max(-1).values.sum(-1)
-    
     def inbatch_score(self, Q, D):
         Q_prime = Q.view(-1, Q.size(-1)) # (B*Lq H)
         D_prime = D.view(-1, D.size(-1)) # (B*2*Ld H)
         B, Lq, Lh = Q.size(0), Q.size(1), D.size(1)
+        print(Q_prime.size(), D_prime.size())
 
         # if self.similarity_metric == 'cosine':
-        return (Q_prime @ D_prime.permute(1, 0)).view(B, Lq, B*2, Lh).permute(0, 2, 1, 3).max(-1).values.sum(-1) #(B 2B Lq Ld) -> (B 2B Lq) -> (B 2B)
+        return (Q_prime @ D_prime.permute(1, 0)).view(B, Lq, -1, Lh).permute(0, 2, 1, 3).max(-1).values.sum(-1) #(B 2B Lq Ld) -> (B 2B Lq) -> (B 2B)
 
     def mask(self, input_ids):
         mask = [[(x not in self.skiplist) and (x != 0) for x in d] \

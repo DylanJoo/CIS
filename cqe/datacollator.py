@@ -111,6 +111,7 @@ class ConvTripletCollator:
         c_inputs = self.tokenizer(
             c_texts,
             max_length=self.context_maxlen, 
+            padding=True,
             truncation=True,
             add_special_tokens=False,
         )

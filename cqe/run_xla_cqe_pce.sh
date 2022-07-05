@@ -4,19 +4,15 @@ python3 xla_spawn.py \
   --resume_from_checkpoint ./checkpoints/colbertv2.0 \
   --model_name_or_path bert-base-uncased \
   --config_name bert-base-uncased \
-  --output_dir ./checkpoints/colbert.cqe.v0.pairwise \
+  --output_dir ./checkpoints/cqe-pce.v0 \
   --train_file ../convir_data/canard_convir.train.triples.cqe.v0.jsonl \
-  --eval_file ../convir_data/dev.triples.sample.jsonl \
-  --max_q_seq_length 64 \
+  --max_q_seq_length 32 \
   --max_p_seq_length 150 \
   --colbert_type 'colbert' \
   --dim 128 \
   --remove_unused_columns false \
-  --per_device_train_batch_size 4 \ # colbert's batch size
-  --evaluation_strategy 'steps'\
+  --per_device_train_batch_size 12 \ # cqe batch size
   --learning_rate 7e-6 \ # cqe learning rate
-  --max_steps 20000 \
+  --max_steps 15000 \
   --save_steps 5000 \
-  --eval_steps 5000 \
-  --do_train \
-  --do_eval
+  --do_train

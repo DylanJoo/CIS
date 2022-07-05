@@ -23,7 +23,7 @@ from transformers import (
 )
 
 from datasets import load_dataset, DatasetDict
-from models_dev import ContextCQE
+from models_dev import ColBertForLICQE
 from datacollator import ConvTripletCollator
 
 import os
@@ -57,10 +57,12 @@ class OurDataArguments:
     validation_split_percentage: Optional[int] = field(default=5)
     preprocessing_num_workers: Optional[int] = field(default=None)
     train_file: Optional[str] = field(default="data/orconvqa/sample.jsonl")
-    eval_file: Optional[str] = field(default="data/orconvqa/dev.jsonl")
-    test_file: Optional[str] = field(default="data/orconvqa/test.jsonl")
+    eval_file: Optional[str] = field(default=None)
+    test_file: Optional[str] = field(default=None)
     # Customized arguments
     max_q_seq_length: Optional[int] = field(default=32)
+    max_u_seq_length: Optional[int] = field(default=32)
+    max_c_seq_length: Optional[int] = field(default=32)
     max_p_seq_length: Optional[int] = field(default=128)
 
 @dataclass
@@ -71,10 +73,11 @@ class OurTrainingArguments(TrainingArguments):
     data_seed: int = field(default=None)
     do_train: bool = field(default=False)
     do_eval: bool = field(default=False)
+    do_eval_j: bool = field(default=False)
     max_steps: int = field(default=100)
     save_steps: int = field(default=5000)
     eval_steps: int = field(default=2500)
-    evaluation_strategy: Optional[str] = field(default='steps')
+    evaluation_strategy: Optional[str] = field(default='no')
     per_device_train_batch_size: int = field(default=8)
     per_device_eval_batch_size: int = field(default=8)
     weight_decay: float = field(default=0.0)
@@ -129,16 +132,21 @@ def main():
 
     # Dataset 
     ## Loading form json
-    dataset = DatasetDict.from_json({
-        "train": data_args.train_file,
-        "eval": data_args.eval_file
-    })
+    if training_args.do_eval:
+        dataset = DatasetDict.from_json({
+            "train": data_args.train_file,
+            "eval": data_args.eval_file
+        })
+    else:
+        dataset = DatasetDict.from_json({"train": data_args.train_file,})
+        dataset['eval'] = None
 
     # data collator (transform the datset into the training mini-batch)
     ## Preprocessing
-    conv_triple_collator = ConvTripletCollator(
+    conv_triplet_collator = ConvTripletCollator(
             tokenizer=tokenizer,
-            query_maxlen=data_args.max_q_seq_length,
+            context_maxlen=data_args.max_c_seq_length,
+            utterance_maxlen=data_args.max_q_seq_length,
             doc_maxlen=data_args.max_p_seq_length,
             in_batch_negative=(model_args.colbert_type != 'colbert')
     )

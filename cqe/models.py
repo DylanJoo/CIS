@@ -11,7 +11,13 @@ from transformers import BertPreTrainedModel, BertModel, BertTokenizerFast
 from typing import Optional, Union, Dict, Any
 from loss import InBatchKLLoss, InBatchNegativeCELoss, PairwiseCELoss
 
-class TctColBert(BertPreTrainedModel):
+class ColBertForCQE(BertPreTrainedModel):
+    """ColBert for Conversational Query Embeddings 
+    This class provides:
+    (1) Train like ColBert (pairwise CE Loss)
+    (2) Train like ColBert efficiently (In-batch negative Loss)
+    (3) TCT training (In-bathc negative Loss + KL Loss)
+    """
     def __init__(self, config, **kwargs):
                  # query_maxlen, 
                  # doc_maxlen, 
@@ -96,9 +102,9 @@ class TctColBert(BertPreTrainedModel):
             D = self.colbert_pooler(d.last_hidden_state, mask=d_mask, keep_dims=keep_d_dims)
 
             ## ColBert improved loss (in-batch CE loss)
-            scores_colbert_inbatch = self.inbatch_score(Q, D) # (B 2*B) # in batch CE loss
-            loss = InBatchNegativeCELoss(scores_colbert_inbatch)
-            return {'score': scores_colbert_inbatch, 'loss': loss}
+            scores_inbatch = self.inbatch_score(Q, D) # (B 2*B) # in batch CE loss
+            loss = InBatchNegativeCELoss(scores_inbatch)
+            return {'score': scores_inbatch, 'loss': loss}
 
         # TctColbert
         if self.colbert_type == 'tctcolbert':
@@ -120,7 +126,6 @@ class TctColBert(BertPreTrainedModel):
                 )['score']
             loss = InBatchNegativeCELoss(scores_inbatch_s)
             loss_kl = InBatchKLLoss(scores_inbatch_s, scores_inbatch_t, self.temperature)
-
             return {'score': scores_inbatch_s, 'loss': self.gamma*loss + (1-self.gamma)*loss_kl}
 
     def pairwise_score(self, Q, D):
