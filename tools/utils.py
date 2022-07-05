@@ -86,7 +86,9 @@ def filter_rel_collections(corpus, runs, output='rel_collections.jsonl'):
     if output is None:
         return collection_dict
 
-
-
-
+def doc_pool_random_sampling(pool, n):
+    try:
+        return random.sample(pool, n)
+    except:
+        return random.choices(pool, k=n)
 
