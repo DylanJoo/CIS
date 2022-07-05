@@ -26,7 +26,7 @@ class ColBertForCQE(BertPreTrainedModel):
                  # teacher=None,
                  # similarity_metric='cosine'):
 
-        super(TctColBert, self).__init__(config)
+        super(ColBertForCQE, self).__init__(config)
 
         # self.query_maxlen = kwargs.pop('query_maxlen', 32)
         # self.doc_maxlen = kwargs.pop('doc_maxlen', 128)

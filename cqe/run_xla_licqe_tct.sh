@@ -7,14 +7,14 @@ python3 xla_spawn.py \
   --config_name bert-base-uncased \
   --output_dir ./checkpoints/licqe-tct.v0 \
   --train_file ../convir_data/canard_convir.train.quadruples.cqe.v0.jsonl \
-  --max_c_seq_length 32 \
+  --max_c_seq_length 128 \
   --max_u_seq_length 32 \
   --max_p_seq_length 150 \
   --colbert_type 'tctcolbert' \
   --dim 128 \
   --remove_unused_columns false \
   --per_device_train_batch_size 12 \
-  --learning_rate 7e-6 \ 
+  --learning_rate 7e-6 \
   --max_steps 15000 \
   --save_steps 5000 \
   --do_train

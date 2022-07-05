@@ -11,8 +11,8 @@ python3 xla_spawn.py \
   --colbert_type 'colbert' \
   --dim 128 \
   --remove_unused_columns false \
-  --per_device_train_batch_size 12 \ # cqe batch size
-  --learning_rate 7e-6 \ # cqe learning rate
+  --per_device_train_batch_size 12 \
+  --learning_rate 7e-6 \
   --max_steps 15000 \
   --save_steps 5000 \
   --do_train

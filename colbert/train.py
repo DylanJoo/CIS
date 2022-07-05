@@ -23,7 +23,7 @@ from transformers import (
 )
 
 from datasets import load_dataset, DatasetDict
-from models import TctColBert
+from models import TctColBertForIR
 from datacollator import IRTripletCollator
 
 import os
@@ -71,7 +71,7 @@ class OurTrainingArguments(TrainingArguments):
     seed: int = field(default=42)
     data_seed: int = field(default=None)
     do_train: bool = field(default=False)
-    do_eval: bool = field(default=False)
+    do_eval_j: bool = field(default=False)
     max_steps: int = field(default=100)
     save_steps: int = field(default=5000)
     eval_steps: int = field(default=2500)
@@ -109,7 +109,7 @@ def main():
     tokenizer = AutoTokenizer.from_pretrained(model_args.tokenizer_name, **tokenizer_kwargs)
 
     # model 
-    model_teacher = TctColBert.from_pretrained(
+    model_teacher = TctColBertForIR.from_pretrained(
             pretrained_model_name_or_path=model_args.kd_teacher_model_name_or_path,
             config=config,
             colbert_type='colbert-inbatch',
@@ -122,7 +122,7 @@ def main():
             'kd_teacher': model_teacher, 
             'colbert_type': model_args.colbert_type
     }
-    model = TctColBert.from_pretrained(
+    model = TctColBertForIR.from_pretrained(
             pretrained_model_name_or_path=model_args.model_name_or_path,
             config=config,
             **model_kwargs
@@ -130,10 +130,14 @@ def main():
 
     # Dataset 
     ## Loading form json
-    dataset = DatasetDict.from_json({
-        "train": data_args.train_file,
-        "eval": data_args.eval_file
-    })
+    if training_args.do_eval:
+        dataset = DatasetDict.from_json({
+            "train": data_args.train_file,
+            "eval": data_args.eval_file
+        })
+    else:
+        dataset = DatasetDict.from_json({"train": data_args.train_file,})
+        data['eval'] = None
 
     # data collator (transform the datset into the training mini-batch)
     ## Preprocessing
