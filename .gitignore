@@ -34,6 +34,7 @@ spr/runs/
 # dpr-convir
 cqe/logs/
 cqe/wandb/
+cqe/checkpoints/colbertv2.0/
 
 # dpr-colbert
 colbert/logs/
