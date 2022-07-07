@@ -4,7 +4,6 @@ Codes for finetunning ColBert model
 Includes following setups
 - ColBert with pairwise loss (following instructions from original paper)
 - COlBert with in-bathch negatives loss
-
 Backbone models
 - bert-base-uncased
 """
@@ -24,7 +23,7 @@ from transformers import (
 
 from datasets import load_dataset, DatasetDict
 from models_dev import ColBertForLICQE
-from datacollator import ConvTripletCollator
+from datacollator import ConvQuadrupletCollator
 
 import os
 os.environ["WANDB_DISABLED"] = "true"
@@ -60,7 +59,7 @@ class OurDataArguments:
     eval_file: Optional[str] = field(default=None)
     test_file: Optional[str] = field(default=None)
     # Customized arguments
-    max_q_seq_length: Optional[int] = field(default=32)
+    max_q_seq_length: Optional[int] = field(default=None)
     max_u_seq_length: Optional[int] = field(default=32)
     max_c_seq_length: Optional[int] = field(default=32)
     max_p_seq_length: Optional[int] = field(default=128)
@@ -73,7 +72,6 @@ class OurTrainingArguments(TrainingArguments):
     data_seed: int = field(default=None)
     do_train: bool = field(default=False)
     do_eval: bool = field(default=False)
-    do_eval_j: bool = field(default=False)
     max_steps: int = field(default=100)
     save_steps: int = field(default=5000)
     eval_steps: int = field(default=2500)
@@ -143,7 +141,7 @@ def main():
 
     # data collator (transform the datset into the training mini-batch)
     ## Preprocessing
-    conv_triplet_collator = ConvTripletCollator(
+    quadruplet_collator = ConvQuadrupletCollator(
             tokenizer=tokenizer,
             context_maxlen=data_args.max_c_seq_length,
             utterance_maxlen=data_args.max_q_seq_length,
@@ -157,7 +155,7 @@ def main():
             args=training_args,
             train_dataset=dataset['train'],
             eval_dataset=dataset['eval'],
-            data_collator=conv_triplet_collator
+            data_collator=quadruplet_collator
     )
     
     # ***** strat training *****

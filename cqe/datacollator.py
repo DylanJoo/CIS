@@ -79,7 +79,7 @@ This data collator seperate the query into two sources
 - Question: Utterance t
 """
 @dataclass
-class ConvTripletCollator:
+class ConvQuadrupletCollator:
     tokenizer: PreTrainedTokenizerBase
     # query_maxlen: Optional[int] = None
     context_maxlen: Optional[int] = None

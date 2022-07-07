@@ -44,8 +44,7 @@ class OurModelArguments:
     # Cutomized arguments
     colbert_type: Optional[str] = field(default="colbert")
     dim: Optional[int] = field(default=128)
-    kd_teacher_model_name_or_path: Optional[str] = field(\
-            default="castorini/tct_colbert-v2-hnp-msmarco-r2")
+    kd_teacher_model_name_or_path: Optional[str] = field(default="castorini/tct_colbert-v2-hnp-msmarco-r2")
     # pooler_type: str = field(default="cls")
     # temp: float = field(default=0.05)
 
@@ -58,8 +57,8 @@ class OurDataArguments:
     validation_split_percentage: Optional[int] = field(default=5)
     preprocessing_num_workers: Optional[int] = field(default=None)
     train_file: Optional[str] = field(default="data/orconvqa/sample.jsonl")
-    eval_file: Optional[str] = field(default="data/orconvqa/dev.jsonl")
-    test_file: Optional[str] = field(default="data/orconvqa/test.jsonl")
+    eval_file: Optional[str] = field(default=None)
+    test_file: Optional[str] = field(default=None)
     # Customized arguments
     max_q_seq_length: Optional[int] = field(default=32)
     max_p_seq_length: Optional[int] = field(default=128)
@@ -71,11 +70,11 @@ class OurTrainingArguments(TrainingArguments):
     seed: int = field(default=42)
     data_seed: int = field(default=None)
     do_train: bool = field(default=False)
-    do_eval_j: bool = field(default=False)
+    do_eval: bool = field(default=False)
     max_steps: int = field(default=100)
     save_steps: int = field(default=5000)
     eval_steps: int = field(default=2500)
-    evaluation_strategy: Optional[str] = field(default='steps')
+    evaluation_strategy: Optional[str] = field(default='no')
     per_device_train_batch_size: int = field(default=8)
     per_device_eval_batch_size: int = field(default=8)
     weight_decay: float = field(default=0.0)
@@ -109,7 +108,7 @@ def main():
     tokenizer = AutoTokenizer.from_pretrained(model_args.tokenizer_name, **tokenizer_kwargs)
 
     # model 
-    model_teacher = TctColBert.from_pretrained(
+    model_teacher = ColBertForCQE.from_pretrained(
             pretrained_model_name_or_path=model_args.kd_teacher_model_name_or_path,
             config=config,
             colbert_type='colbert-inbatch',
@@ -122,7 +121,7 @@ def main():
             'kd_teacher': model_teacher, 
             'colbert_type': model_args.colbert_type
     }
-    model = TctColBert.from_pretrained(
+    model = ColBertForCQE.from_pretrained(
             pretrained_model_name_or_path=model_args.model_name_or_path,
             config=config,
             **model_kwargs
@@ -137,7 +136,7 @@ def main():
         })
     else:
         dataset = DatasetDict.from_json({"train": data_args.train_file,})
-        data['eval'] = None
+        dataset['eval'] = None
 
     # data collator (transform the datset into the training mini-batch)
     ## Preprocessing
