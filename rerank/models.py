@@ -9,11 +9,11 @@ class monoT5(T5ForConditionalGeneration):
 
     def set_tokenizer(self):
         if 'base' in self.name_or_path or self.name_or_path is None:
-            self.tokenizer = T5Tokenizer.from_pretrained('google/t5-base')
+            self.tokenizer = T5Tokenizer.from_pretrained('t5-base')
         elif 'large' in self.name_or_path:
-            self.tokenizer = T5Tokenizer.from_pretrained('google/t5-large')
+            self.tokenizer = T5Tokenizer.from_pretrained('t5-large')
         else:
-            raise ValueError("Cannot identify tokenizer byname_or_path.")
+            self.tokenizer = T5Tokenizer.from_pretrained('t5-small')
 
     def set_targets(self, tokens=None):
         """

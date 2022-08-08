@@ -15,7 +15,7 @@ def convert_trecweb_to_jsonl():
 
     output = open(PATH_OUTPUT, 'w')
 
-    history = {"utterances": [], "responses": []}
+    history = {"context": [], "utterances": [], "responses": []}
 
     for topic_i, topic in enumerate(manual):
         topic_id = topic['number']
@@ -42,11 +42,14 @@ def convert_trecweb_to_jsonl():
                                 'automatic_rewritten': automatic_rewritten,
                                 'manual_rewritten': manual_rewritten,
                                 'canonical_passage_id': canonical_passage_id,
-                                'history_utterances': "|".join(history['utterances']),
-                                'history_responses': "|".join(history['responses'])}) +'\n'
+                                'context': history['context'],
+                                'history_utterances': history['utterances'],
+                                'history_responses': history['responses']}) +'\n'
             )
 
             # history
+            history['context'].append(utterance)
+            history['context'].append(passage_cano)
             history['utterances'].append(utterance)
             history['responses'].append(passage_cano)
 

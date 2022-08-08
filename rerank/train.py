@@ -134,9 +134,7 @@ def main():
     )
     
     # ***** strat training *****
-    results = trainer.train(
-            resume_from_checkpoint=training_args.resume_from_checkpoint
-    )
+    results = trainer.train(resume_from_checkpoint=training_args.resume_from_checkpoint)
 
     return results
 

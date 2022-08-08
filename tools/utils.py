@@ -4,6 +4,15 @@ import random
 import collections
 import os
 
+def load_topics(path):
+    data_dict = {}
+    with open(path, 'r') as f:
+        for line in f:
+            data = json.loads(line.strip())
+            topic_turn_id = data.pop('id')
+            data_dict[topic_turn_id] = data
+    return data_dict
+
 def load_queries(path):
     query_dict = {}
     with open(path, 'r') as f:
@@ -32,7 +41,7 @@ def load_runs(path, output_score=False): # support .trec file only
     return sorted_run_dict
 
 def load_collections(path=None, dir=None, candidate_set=None):
-    collection_dict = collections.defaultdict(str)
+    collection_dict = {}
 
     if dir: # load if there are many jsonl files
         files = [os.path.join(dir, f) for f in os.listdir(dir) if ".json" in f]

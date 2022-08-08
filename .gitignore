@@ -3,6 +3,12 @@ data/cast20/collections/
 data/canard/*.json
 data/canard4ir/*
 !data/canard4ir/*sample*
+data/cast20/monot5-pairs/
+convir_data_construction/dataset_construction/*.flogits
+convir_data_construction/dataset_construction/*.tlogits
+
+# indexes
+indexes/
 
 # checkpoints
 */checkpoints/

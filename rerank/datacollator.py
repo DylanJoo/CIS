@@ -6,11 +6,12 @@ from transformers.tokenization_utils_base import PreTrainedTokenizerBase
 @dataclass
 class PointwiseDataCollatorForT5:
     tokenizer: PreTrainedTokenizerBase
-    # context_maxlen: Optional[int] = None
-    # utterance_maxlen: Optional[int] = None
     query_maxlen: Optional[int] = None
     doc_maxlen: Optional[int] = None
     return_tensors: Optional[str] = None
+    is_train: bool = True
+    # context_maxlen: Optional[int] = None
+    # utterance_maxlen: Optional[int] = None
 
     def __call__(self, features: List[Dict[str, Any]]) -> Dict[str, Any]:
 
@@ -19,7 +20,7 @@ class PointwiseDataCollatorForT5:
 
         ## Document tokenization
         d_inputs = self.tokenizer(
-                [d + " Relevant:" for d in d_texts],
+                ["Document: {d} Relevant:" for d in d_texts],
                 max_length=self.doc_maxlen,
                 padding="longest",
                 truncation="longest_first",
@@ -36,32 +37,32 @@ class PointwiseDataCollatorForT5:
                 return_tensors=self.return_tensors
         )
 
-        ## target text
-        targets = self.tokenizer(
-                [text['label'] for text in features],
-                truncation=True,
-                return_tensors=self.return_tensors
-        )
+        if self.is_train:
+            ## target text
+            targets = self.tokenizer(
+                    [text['label'] for text in features],
+                    truncation=True,
+                    return_tensors=self.return_tensors
+            )
+            # labels
+            inputs['labels'] = targets.input_ids
 
         # Concatentate
         for k in ['input_ids', 'attention_mask']:
             inputs[k] = torch.cat((inputs[k], d_inputs[k]), 1)
 
-        # labels
-        inputs['labels'] = targets.input_ids
 
         return inputs
 
 @dataclass
 class PointwiseConvDataCollatorForT5:
     tokenizer: PreTrainedTokenizerBase
-    # context_maxlen: Optional[int] = None
-    # utterance_maxlen: Optional[int] = None
     query_maxlen: Optional[int] = None
     doc_maxlen: Optional[int] = None
     return_tensors: Optional[str] = None
     num_history: Optional[int] = 1
     num_history_utterances: Optional[int] = None
+    is_train: bool = True
 
     def __call__(self, features: List[Dict[str, Any]]) -> Dict[str, Any]:
 
@@ -81,7 +82,7 @@ class PointwiseConvDataCollatorForT5:
 
         ## Document tokenization
         d_inputs = self.tokenizer(
-                [d + " Relevant:" for d in d_texts],
+                ["Document: {d} Relevant:" for d in d_texts],
                 max_length=self.doc_maxlen,
                 padding="longest",
                 truncation="longest_first",
@@ -90,7 +91,7 @@ class PointwiseConvDataCollatorForT5:
 
         ## Utterance text + Context text + (truncated) Document listOfTokens
         inputs = self.tokenizer(
-                [f"Query: {u} Context: {c} " for (u, c) in zip(u_texts, c_texts)],
+                [f"Query: {u} Context: {c}" for (u, c) in zip(u_texts, c_texts)],
                 max_length=self.query_maxlen,
                 padding="max_length",
                 truncation="longest_first",
@@ -98,18 +99,19 @@ class PointwiseConvDataCollatorForT5:
                 return_tensors=self.return_tensors
         )
 
-        ## target text
-        targets = self.tokenizer(
-                [text['label'] for text in features],
-                truncation=True,
-                return_tensors=self.return_tensors
-        )
+        if self.is_train:
+            ## target text
+            targets = self.tokenizer(
+                    [text['label'] for text in features],
+                    truncation=True,
+                    return_tensors=self.return_tensors
+            )
+            # labels
+            inputs['labels'] = targets.input_ids
 
         # Concatentate
         for k in ['input_ids', 'attention_mask']:
             inputs[k] = torch.cat((inputs[k], d_inputs[k]), 1)
 
-        # labels
-        inputs['labels'] = targets.input_ids
 
         return inputs

@@ -1,8 +1,13 @@
-python3 tools/convert_run_to_monot5.py \
-  -run spr/runs/dev.canard.rewrite.top1000.trec \
-  -corpus data/trec-car+marco-psg \
-  -k 1000 \
-  -q data/canard/dev.rewrite.tsv \
-  --output_text_pair dev.canard.rewrite.top1000.text_pair.txt \
-  --output_id_pair dev.canard.rewrite.top1000.id_pair.txt
+# automatic
+python3 tools/convert_run_to_conv_monot5.py \
+  -run data/cast20/y2_automatic_results_500.v1.0.run \
+  -corpus data/cast20/collections/ \
+  -topic data/cast20/2020_evaluation_topics_v1.0.jsonl \
+  -output data/cast20/monot5-pairs/cast20.automatic.baseline.top500.jsonl
 
+# manual
+python3 tools/convert_run_to_conv_monot5.py \
+  -run data/cast20/y2_manual_results_500.v1.0.run \
+  -corpus data/cast20/collections/ \
+  -topic data/cast20/2020_evaluation_topics_v1.0.jsonl \
+  -output data/cast20/monot5-pairs/cast20.manual.baseline.top500.jsonl
