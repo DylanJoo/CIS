@@ -1,45 +1,25 @@
-# raw data
-data/msmarco-psgs/
-data/trec-car/
-data/trec-car+marco-psg/
-data/canard/*.json
-data/quac/*.json
-
 # data
-convir_data/*
-!convir_data/train.triples.sample.jsonl
-!convir_data/sample.jsonl
-!convir_data/dataset_description.md
-data/archived/
-data/rel_collections/
+data/cast20/collections/
+data/canard/*.json
+data/canard4ir/*
+!data/canard4ir/*sample*
 
 # checkpoints
-cqe/checkpoints/
-colbert/checkpoints/
+*/checkpoints/
+*/checkpoints/
 
-# dpr
-dpr/encoded/
-dpr/faiss-indexes/
+# runs
+runs/
 
 # re-ranking
-re-ranking/*/*
-re-ranking/*
-!re-ranking/download.sh
-!re-ranking/data_description.md
+rerank/checkpoints/
 
 # spr
 spr/indexes/
-spr/runs/
 
 # dpr-convir
-cqe/logs/
-cqe/wandb/
-cqe/checkpoints/colbertv2.0/
-
-# dpr-colbert
-colbert/logs/
-colbert/wandb/
-
+e2e/checkpoints/
 
 __pycache__/
+logs/
 *.swp
