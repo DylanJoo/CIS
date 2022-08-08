@@ -1,6 +1,7 @@
 # data
 data/cast20/collections/
 data/canard/*.json
+data/quac/*.json
 data/canard4ir/*
 !data/canard4ir/*sample*
 data/cast20/monot5-pairs/
