@@ -42,8 +42,8 @@ def convert_trecweb_to_jsonl():
                                 'automatic_rewritten': automatic_rewritten,
                                 'manual_rewritten': manual_rewritten,
                                 'canonical_passage_id': canonical_passage_id,
-                                'history_utterances': history['utterances'],
-                                'history_responses': history['responses']}) +'\n'
+                                'history_utterances': "|".join(history['utterances']),
+                                'history_responses': "|".join(history['responses'])}) +'\n'
             )
 
             # history
