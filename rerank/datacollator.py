@@ -9,14 +9,15 @@ class PointwiseDataCollatorForT5:
     query_maxlen: Optional[int] = None
     doc_maxlen: Optional[int] = None
     return_tensors: Optional[str] = None
+    query_source: Optional[str] = "automatic_rewritten"
     is_train: bool = True
     # context_maxlen: Optional[int] = None
     # utterance_maxlen: Optional[int] = None
 
     def __call__(self, features: List[Dict[str, Any]]) -> Dict[str, Any]:
 
-        q_texts = [f"{text['utterance']}" for text in features]
-        d_texts = [f"{text['passage']}" for text in features] 
+        q_texts = [text[f'{self.query_source}'] for text in features]
+        d_texts = [text['passage'] for text in features] 
 
         ## Document tokenization
         d_inputs = self.tokenizer(
@@ -29,7 +30,7 @@ class PointwiseDataCollatorForT5:
 
         ## Utterance text + Context text + (truncated) Document listOfTokens
         inputs = self.tokenizer(
-                [f"Query: {u} " for u in q_texts],
+                [f"Query: {q}" for q in q_texts],
                 max_length=self.query_maxlen,
                 padding="max_length",
                 truncation="longest_first",
@@ -51,7 +52,6 @@ class PointwiseDataCollatorForT5:
         for k in ['input_ids', 'attention_mask']:
             inputs[k] = torch.cat((inputs[k], d_inputs[k]), 1)
 
-
         return inputs
 
 @dataclass
@@ -66,8 +66,8 @@ class PointwiseConvDataCollatorForT5:
 
     def __call__(self, features: List[Dict[str, Any]]) -> Dict[str, Any]:
 
-        u_texts = [f"{text['utterance']}" for text in features]
-        d_texts = [f"{text['passage']}" for text in features] 
+        u_texts = [text['utterance'] for text in features]
+        d_texts = [text['passage'] for text in features] 
         c_texts = []
 
         for i, text in enumerate(features):

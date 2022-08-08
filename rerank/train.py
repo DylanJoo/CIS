@@ -13,7 +13,7 @@ from transformers import (
 )
 
 from datasets import load_dataset, DatasetDict
-from datacollator import PointwiseConvDataCollatorForT5
+from datacollator import PointwiseDataCollatorForT5, PointwiseConvDataCollatorForT5
 from models import monoT5
 from dataset_utils import prepare_for_monot5
 
@@ -116,13 +116,22 @@ def main():
 
     # data collator (transform the datset into the training mini-batch)
     ## Preprocessing
-    conv_datacollator = PointwiseConvDataCollatorForT5(
-            tokenizer=tokenizer,
-            query_maxlen=data_args.max_q_seq_length,
-            doc_maxlen=data_args.max_p_seq_length,
-            return_tensors='pt',
-            num_history=3,
-    )
+    if args.prefix == 'monoT5':
+        datacollator = PointwiseDataCollatorForT5(
+                tokenizer=model.tokenizer,
+                query_maxlen=args.max_q_seq_length,
+                doc_maxlen=args.max_p_seq_length,
+                return_tensors='pt',
+        )
+
+    if arg.prefix == 'conv.monoT5':
+        datacollator = PointwiseConvDataCollatorForT5(
+                tokenizer=model.tokenizer,
+                query_maxlen=args.max_q_seq_length,
+                doc_maxlen=args.max_p_seq_length,
+                return_tensors='pt',
+                num_history=3,
+        )
 
     # Trainer
     trainer = Trainer(
@@ -130,7 +139,7 @@ def main():
             args=training_args,
             train_dataset=dataset_train_mono,
             eval_dataset=dataset_eval_mono if training_args.do_eval else None,
-            data_collator=conv_datacollator
+            data_collator=datacollator
     )
     
     # ***** strat training *****

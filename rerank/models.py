@@ -7,11 +7,13 @@ class monoT5(T5ForConditionalGeneration):
     targeted_tokens = ['true', 'false']
     # tokenizer_name = 'google/t5-base'
 
-    def set_tokenizer(self):
-        if 'base' in self.name_or_path or self.name_or_path is None:
-            self.tokenizer = T5Tokenizer.from_pretrained('t5-base')
+    def set_tokenizer(self, tokenizer=None):
+        if tokenizer is not None:
+            self.tokenizer = tokenizer
         elif 'large' in self.name_or_path:
             self.tokenizer = T5Tokenizer.from_pretrained('t5-large')
+        elif 'base' in self.name_or_path:
+            self.tokenizer = T5Tokenizer.from_pretrained('t5-base')
         else:
             self.tokenizer = T5Tokenizer.from_pretrained('t5-small')
 
@@ -30,8 +32,10 @@ class monoT5(T5ForConditionalGeneration):
         print("Ready for predict()")
 
     def predict(self, batch):
-        # Perpare BOS labels
-
+        """
+        Parameters:
+            batch: batch inputs of tokenized query-passage pair.
+        """
         softmax = nn.Softmax(dim=1)
 
         for k in batch:
@@ -42,4 +46,5 @@ class monoT5(T5ForConditionalGeneration):
                 self.config.decoder_start_token_id
         ).to(self.device)
         batch_logits = self.forward(**batch, labels=dummy_labels).logits
+
         return softmax(batch_logits[:, 0, self.targeted_ids]).detach().cpu().numpy() # B 2
