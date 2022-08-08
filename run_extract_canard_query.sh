@@ -1,6 +1,7 @@
 # train
 python3 tools/extract_canard_query.py \
   -canard data/canard/train.json \
+  -full \
   -quac data/quac \
   -col2 Question \
   -col2 Rewrite \
@@ -10,6 +11,7 @@ python3 tools/extract_canard_query.py \
 # dev
 python3 tools/extract_canard_query.py \
   -canard data/canard/dev.json \
+  -full \
   -quac data/quac \
   -col2 Question \
   -col2 Rewrite \

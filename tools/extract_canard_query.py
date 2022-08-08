@@ -21,7 +21,7 @@ def main(args):
                 resource = f"{dict_canard['Rewrite']} {QUAC_ANS[quac_id][col]}"
             elif col == 'History': # include topic context and response context
                 if args.full_context: 
-                    context = dic_canard[col]
+                    context = dict_canard[col][2:]
                 else: # only question context (i.e. index 2, 4, 6, ...)
                     context = [c for i, c in enumerate(dict_canard[col][2:]) if i % 2 == 0]
                 resource = "|".join(context) + f"[Q] {dict_canard['Question']}"

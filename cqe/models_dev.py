@@ -1,8 +1,3 @@
-"""
-This codes modified from original ColBert Paper's repositary:
-
-[ColBert](https://github.com/stanford-futuredata/ColBERT/blob/master/colbert/modeling/colbert.py)
-"""
 import string
 import torch
 import torch.nn as nn
