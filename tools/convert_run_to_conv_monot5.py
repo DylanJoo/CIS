@@ -32,7 +32,6 @@ def convert_run_to_conv_monot5(args):
                 f.write(json.dumps(topics[qid])+'\n')
             
             if i % 1000 == 0:
-                break
                 print(f'Creating re-ranking input ...{i}')
 
 if __name__ == '__main__':

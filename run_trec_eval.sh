@@ -23,9 +23,9 @@ tools/trec_eval-9.0.7/trec_eval \
     -m ndcg_cut.3,500 -m map_cut.100,500 -m recall.100 \
     $QREL $RERANK
 echo '----------|--------|-------|------|---------|---------|--------|'
-# echo Automatic Baseline conv monot5
-# RERANK=runs/cast20.automatic.eval.topics.baseline.top500.conv_monomt5.small.trec
-# tools/trec_eval-9.0.7/trec_eval \
-#     -m ndcg_cut.3,500 -m map_cut.100,500 -m recall.100 \
-#     $QREL $RERANK
-# echo '----------|--------|-------|------|---------|---------|--------|'
+echo Manual Baseline monot5
+RERANK=runs/cast20.manual.eval.topics.baseline.top500.monot5.small.trec
+tools/trec_eval-9.0.7/trec_eval \
+    -m ndcg_cut.3,500 -m map_cut.100,500 -m recall.100 \
+    $QREL $RERANK
+echo '----------|--------|-------|------|---------|---------|--------|'
