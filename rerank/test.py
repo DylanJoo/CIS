@@ -23,5 +23,16 @@ input_1 = tokenizer(example_1, return_tensors='pt')
 output_0 = model.predict(input_0)
 output_1 = model.predict(input_1)
 
+print(input_0.input_ids)
+print(input_1.input_ids)
 print(output_0)
 print(output_1)
+
+input = tokenizer([example_0, example_1], padding=True, return_tensors='pt')
+
+output = model.predict(input)
+print(input.input_ids)
+print(output)
+
+# [[0.5015087  0.49849123]
+#  [0.9878755  0.01212445]]

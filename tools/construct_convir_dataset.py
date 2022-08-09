@@ -18,9 +18,6 @@ parser.add_argument("-k_pos", "--topk_positive", type=int, default=None)
 parser.add_argument("-n", "--n_examples", type=int, default=100)
 parser.add_argument("--version", type=str, default="v0")
 parser.add_argument("-collections", "--collections", type=str, default="data/trec-car+marco-psg/")
-# parser.add_argument("--negative_pool", type=str, default="rewrite-answer")
-# parser.add_argument("--hn_first", action='store_true', default=False)
-# parser.add_argument("--hn_rand", action='store_true', default=False)
 args = parser.parse_args()
 
 

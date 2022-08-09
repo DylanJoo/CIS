@@ -7,6 +7,7 @@ data/canard4ir/*
 data/cast20/monot5-pairs/
 convir_data_construction/dataset_construction/*.flogits
 convir_data_construction/dataset_construction/*.tlogits
+convir_data_construction/monot5-pairs/
 
 # indexes
 indexes/

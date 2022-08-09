@@ -66,9 +66,8 @@ if __name__ == '__main__':
 
     score_list = []
     # run prediction
-    for b, batch in enumerate(dataloader):
-        batch_inputs = batch
-        output = model.predict(batch_inputs)
+    for b, batch_input in enumerate(dataloader):
+        output = model.predict(batch_input)
 
         true_prob = output[:, 0]
         false_prob = output[:, 1]
@@ -76,6 +75,7 @@ if __name__ == '__main__':
         score_list += true_prob.tolist()
 
         if b % 1000 == 0:
+            print(true_prob)
             print(f"{b} qp pair inferencing")
 
 

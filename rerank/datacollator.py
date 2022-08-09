@@ -19,22 +19,12 @@ class PointwiseDataCollatorForT5:
         q_texts = [text[f'{self.query_source}'] for text in features]
         d_texts = [text['passage'] for text in features] 
 
-        ## Document tokenization
-        d_inputs = self.tokenizer(
-                ["Document: {d} Relevant:" for d in d_texts],
-                max_length=self.doc_maxlen,
-                padding="longest",
-                truncation="longest_first",
-                return_tensors=self.return_tensors
-        )
-
-        ## Utterance text + Context text + (truncated) Document listOfTokens
+        ## Rewrite text + Document tokenization
         inputs = self.tokenizer(
-                [f"Query: {q}" for q in q_texts],
-                max_length=self.query_maxlen,
-                padding="max_length",
-                truncation="longest_first",
-                add_special_tokens=False,
+                [f"Query: {q} Document: {d} Relevant:" for q, d in zip(q_texts, d_texts)],
+                max_length=self.query_maxlen+self.doc_maxlen,
+                padding=True,
+                truncation=True,
                 return_tensors=self.return_tensors
         )
 
@@ -47,10 +37,6 @@ class PointwiseDataCollatorForT5:
             )
             # labels
             inputs['labels'] = targets.input_ids
-
-        # Concatentate
-        for k in ['input_ids', 'attention_mask']:
-            inputs[k] = torch.cat((inputs[k], d_inputs[k]), 1)
 
         return inputs
 
@@ -82,7 +68,7 @@ class PointwiseConvDataCollatorForT5:
 
         ## Document tokenization
         d_inputs = self.tokenizer(
-                ["Document: {d} Relevant:" for d in d_texts],
+                [f"Document: {d} Relevant:" for d in d_texts],
                 max_length=self.doc_maxlen,
                 padding="longest",
                 truncation="longest_first",

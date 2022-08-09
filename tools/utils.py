@@ -24,19 +24,19 @@ def load_queries(path):
 
 def load_runs(path, output_score=False): # support .trec file only
     run_dict = collections.defaultdict(list)
-    sorted_run_dict = collections.defaultdict(list)
     with open(path, 'r') as f:
         for line in f:
-            qid, Q0, docid, rank, rel_score, pyserini = line.strip().split()
-            run_dict[qid] += [(docid, rel_score)]
+            qid, _, docid, rank, _, _ = line.strip().split()
+            run_dict[qid] += [(docid, float(rank))]
 
-    # sort, just in case
-    for (qid, doc_id_ranklist) in run_dict.items():
-        sorted_ranklist = sorted(doc_id_ranklist, key=lambda x: x[1], reverse=True) # score with descending order
+    sorted_run_dict = collections.OrderedDict()
+    for (qid, doc_id_ranks) in run_dict.items():
+        sorted_doc_id_ranks = \
+                sorted(doc_id_ranks, key=lambda x: x[1], reverse=False) # score with descending order
         if output_score:
-            sorted_run_dict[qid] = [(docid, rel_score) for docid, rel_score in sorted_ranklist]
+            sorted_run_dict[qid] = [(docid, rel_score) for docid, rel_score in sorted_doc_id_ranks]
         else:
-            sorted_run_dict[qid] = [docid for docid, _ in sorted_ranklist]
+            sorted_run_dict[qid] = [docid for docid, _ in sorted_doc_id_ranks]
 
     return sorted_run_dict
 

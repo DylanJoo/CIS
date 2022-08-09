@@ -22,13 +22,14 @@ def convert_to_monot5(args):
         for i, (qid, docid_ranklist) in enumerate(runs.items()):
 
             for k, docid in enumerate(docid_ranklist):
-                text_pair.write(f"Query: {queries[qid]} Document: {collections[docid]} Relevant:\n")
-                id_pair.write(f"{qid}\t{docid}\t{k+1}\n")
+                q = queries[qid].strip()
+                d = re.sub("\s\s+" , " ", collections[docid].strip())
+                text_pair.write(f"Query: {q} Document: {d} Relevant:\n")
+                id_pair.write(f"{qid}\t{docid}\n")
             
             if i % 1000 == 0:
                 print(f'Creating re-ranking input ...{i}')
 
-print("DONE!")
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("-run", "--run", type=str, required=False,)
@@ -40,3 +41,6 @@ if __name__ == '__main__':
     parser.add_argument("--output_text_pair", type=str, required=True,)
     parser.add_argument("--output_id_pair", type=str, required=True,)
     args = parser.parse_args()
+
+    convert_to_monot5(args)
+    print("DONE!")
