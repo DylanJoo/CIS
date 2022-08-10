@@ -6,31 +6,29 @@ import os
 def main(args):
 
     canard = json.load(open(args.path_canard, 'r'))
-    outputs = {}
-    for col in args.column_2:
-        outputs.update({
-                col: open(args.path_canard.replace('json', f'{col.lower()}.tsv'), 'w')
-        })
 
-    for i, dict_canard in enumerate(canard):
+    with open(args.path_output, 'w') as fout:
 
-        quac_id = f"{dict_canard['QuAC_dialog_id']}_q#{dict_canard['Question_no']-1}"
-        assert QUAC_ANS[quac_id]['Question'] == dict_canard['Question'], 'Mismatched'
-        for col in set(args.column_2):
-            if col == 'Answer': # beside answer, append the rewrite question before
-                resource = f"{dict_canard['Rewrite']} {QUAC_ANS[quac_id][col]}"
-            elif col == 'History': # include topic context and response context
-                if args.full_context: 
-                    context = dict_canard[col][2:]
-                else: # only question context (i.e. index 2, 4, 6, ...)
-                    context = [c for i, c in enumerate(dict_canard[col][2:]) if i % 2 == 0]
-                resource = "|".join(context) + f"[Q] {dict_canard['Question']}"
-            else:
-                resource = dict_canard[col]
-            outputs[col].write(f"{quac_id}\t{resource}\n")
+        for i, dict_canard in enumerate(canard):
 
-        if i % 10000 == 0:
-            print("{} finished...".format(i))
+            query_dict = { }
+            quac_id = f"{dict_canard['QuAC_dialog_id']}_q#{dict_canard['Question_no']-1}"
+            assert QUAC_ANS[quac_id]['Question'] == dict_canard['Question'], 'Mismatched'
+
+            query_dict['id'] = quac_id
+            query_dict['answer'] = QUAC_ANS[quac_id]['Answer']
+            query_dict['utterance'] = QUAC_ANS[quac_id]['Question']
+            query_dict['rewrite'] = dict_canard['Rewrite']
+            query_dict['history_topic'] = dict_canard['History'][:2]
+            query_dict['history_utterances'] = \
+                    [c for i, c in enumerate(dict_canard['History'][2:]) if i % 2 == 1]
+            query_dict['history_responses'] = \
+                    [c for i, c in enumerate(dict_canard['History'][2:]) if i % 2 == 0]
+
+            fout.write(json.dumps(query_dict) + '\n')
+
+            if i % 10000 == 0:
+                print("{} finished...".format(i))
 
 def parse_quac(dir):
     quac = json.load(open(os.path.join(dir, 'train_quac.json'), 'r'))['data'] + \
@@ -57,10 +55,9 @@ def parse_quac(dir):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("-canard", "--path_canard", default="data/canard/train.json", type=str)
+    parser.add_argument("-canard", "--path_canard", default="train.json", type=str)
+    parser.add_argument("-output", "--path_output", type=str)
     parser.add_argument("-quac", "--dir_quac", default="data/quac/", type=str)
-    parser.add_argument("-col2", "--column_2", action='append', default=['Question'])
-    parser.add_argument("-full", "--full_context", action='store_true', default=False)
     args = parser.parse_args()
 
     QUAC_ANS = parse_quac(args.dir_quac)

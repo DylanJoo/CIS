@@ -1,24 +1,22 @@
 ## V0
 python3 tools/construct_convir_dataset.py \
-  --query data/canard/train.history.tsv \
-  --run_target re-ranking/runs/train.canard.answer.monot5.pred.top1000.rerank.trec \
-  --run_reference re-ranking/runs/train.canard.rewrite.monot5.pred.top1000.rerank.trec \
-  --convir_dataset convir_data/canard.convir.train.quadruples.top3.jsonl \
-  --quadruplet \
-  --version 'v0' \
+  --topic data/canard/train.queries.jsonl \
+  --run_target convir_data_construction/runs/cast20.canard.train.teacher.top1000.monot5.trec \
+  --run_reference convir_data_construction/runs/cast20.canard.train.student.top1000.monot5.trec \
+  --convir_dataset data/canard4ir/cast20.canard.train.triplet.top3.tsv \
+  --version 'top3' \
   -k_pos 3 \
   -k 200 \
-  -collections data/cast22/collections/
+  -collections data/cast20/collections/
         
 
 ## V1
 python3 tools/construct_convir_dataset.py \
-  --query data/canard/train.history.tsv \
-  --run_target re-ranking/runs/train.canard.answer.monot5.pred.top1000.rerank.trec \
-  --run_reference re-ranking/runs/train.canard.rewrite.monot5.pred.top1000.rerank.trec \
-  --convir_dataset convir_data/canard_convir.train.quadruples.overlapped.jsonl \
-  --quadruplet \
-  --version 'v1' \
+  --topic data/canard/train.queries.jsonl \
+  --run_target convir_data_construction/runs/cast20.canard.train.teacher.top1000.monot5.trec \
+  --run_reference convir_data_construction/runs/cast20.canard.train.student.top1000.monot5.trec \
+  --convir_dataset data/canard4ir/cast20.canard.train.triplet.overlapped.tsv \
+  --version 'overlapped' \
   -k_pos 3 \
   -k 200 \
-  -collections data/cast22/collections/
+  -collections data/cast20/collections/

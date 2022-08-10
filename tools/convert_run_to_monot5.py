@@ -25,8 +25,16 @@ def convert_to_monot5(args):
             for k, docid in enumerate(docid_ranklist):
                 # q = queries[qid].strip()
                 d = re.sub("\s\s+" , " ", collections[docid].strip())
-                q = topics[qid]['automatic_rewritten']
-                text_pair.write(f"Query: {q} Document: {d} Relevant:\n")
+                if args.use_context > 0:
+                    q = topics[qid]['utterance']
+                    c_u = topics[qid]['history_utterances']
+                    c_r = topics[qid]['history_responses']
+                    c = "|".join([f"{u}|{r}" for u, r in zip(c_u, c_r)][-args.use_context:])
+                    text_pair.write(f"Query: {q} Context: {c} Document: {d} Relevant:\n")
+                else:
+                    q = topics[qid]['automatic_rewritten']
+                    text_pair.write(f"Query: {q} Document: {d} Relevant:\n")
+                    
                 id_pair.write(f"{qid}\t{docid}\n")
             
             if i % 1000 == 0:
@@ -43,6 +51,7 @@ if __name__ == '__main__':
     parser.add_argument("-q_index", "--queries_index", type=str, required=False)
     parser.add_argument("--output_text_pair", type=str, required=True,)
     parser.add_argument("--output_id_pair", type=str, required=True,)
+    parser.add_argument("--use_context", type=int, default=0)
     args = parser.parse_args()
 
     convert_to_monot5(args)
