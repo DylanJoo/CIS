@@ -1,9 +1,8 @@
 import os
 import collections
-import re
 import argparse
 import json
-from utils import load_runs, load_queries, load_collections, load_topics
+from utils import load_runs, load_queries, load_collections, load_topics, normalized
 
 def convert_to_monot5(args):
     # laod requirments
@@ -24,15 +23,20 @@ def convert_to_monot5(args):
 
             for k, docid in enumerate(docid_ranklist):
                 # q = queries[qid].strip()
-                d = re.sub("\s\s+" , " ", collections[docid].strip())
+                d = normalized(collections[docid])
                 if args.use_context > 0:
-                    q = topics[qid]['utterance']
+                    q = normalized(topics[qid]['utterance'])
                     c_u = topics[qid]['history_utterances']
                     c_r = topics[qid]['history_responses']
-                    c = "|".join([f"{u}|{r}" for u, r in zip(c_u, c_r)][-args.use_context:])
+                    c = normalized(
+                            "|".join([f"{u}|{r}" for u, r in zip(c_u, c_r)][-args.use_context:])
+                    )
                     text_pair.write(f"Query: {q} Context: {c} Document: {d} Relevant:\n")
                 else:
-                    q = topics[qid]['automatic_rewritten']
+                    try:
+                        q = normalized(topics[qid]['automatic_rewritten'])
+                    except:
+                        q = normalized(topics[qid]['rewrite'])
                     text_pair.write(f"Query: {q} Document: {d} Relevant:\n")
                     
                 id_pair.write(f"{qid}\t{docid}\n")
@@ -44,11 +48,9 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("-run", "--run", type=str, required=False,)
     parser.add_argument("-corpus", "--corpus", type=str, required=True,)
-    parser.add_argument("-d", "--doc_level", action="store_true", default=False,)
     parser.add_argument("-k", "--top_k", type=int, default=1000,)
     # parser.add_argument("-q", "--queries", type=str, required=True,)
     parser.add_argument("-topic", "--topic_queries", type=str, required=True,)
-    parser.add_argument("-q_index", "--queries_index", type=str, required=False)
     parser.add_argument("--output_text_pair", type=str, required=True,)
     parser.add_argument("--output_id_pair", type=str, required=True,)
     parser.add_argument("--use_context", type=int, default=0)

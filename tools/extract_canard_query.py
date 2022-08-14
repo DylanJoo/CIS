@@ -16,14 +16,14 @@ def main(args):
             assert QUAC_ANS[quac_id]['Question'] == dict_canard['Question'], 'Mismatched'
 
             query_dict['id'] = quac_id
-            query_dict['answer'] = QUAC_ANS[quac_id]['Answer']
-            query_dict['utterance'] = QUAC_ANS[quac_id]['Question']
-            query_dict['rewrite'] = dict_canard['Rewrite']
+            query_dict['answer'] = QUAC_ANS[quac_id]['Answer'].strip()
+            query_dict['utterance'] = QUAC_ANS[quac_id]['Question'].strip()
+            query_dict['rewrite'] = dict_canard['Rewrite'].strip()
             query_dict['history_topic'] = dict_canard['History'][:2]
             query_dict['history_utterances'] = \
-                    [c for i, c in enumerate(dict_canard['History'][2:]) if i % 2 == 1]
+                    [c.strip() for i, c in enumerate(dict_canard['History'][2:]) if i % 2 == 0]
             query_dict['history_responses'] = \
-                    [c for i, c in enumerate(dict_canard['History'][2:]) if i % 2 == 0]
+                    [c.strip() for i, c in enumerate(dict_canard['History'][2:]) if i % 2 == 1]
 
             fout.write(json.dumps(query_dict) + '\n')
 

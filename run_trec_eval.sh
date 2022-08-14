@@ -5,27 +5,21 @@ echo '-----------|--------|-------|--------|-------|---------|-----|'
 echo '| Setting  | Source | R@100 | nDCG@3 | nDCG  | mAP@100 | mAP |'
 echo '-----------|--------|-------|--------|-------|---------|-----|'
 QREL=data/cast20/2020qrels.txt
-BASELINE_A=data/cast20/y2_automatic_results_500.v1.0.run
-BASELINE_M=data/cast20/y2_manual_results_500.v1.0.run
-echo Automatic Baseline 
-tools/trec_eval-9.0.7/trec_eval \
-    -m ndcg_cut.3,500 -m map_cut.100,500 -m recall.100 \
-    $QREL $BASELINE_A
+
+for BASELINE in data/cast20/y2*;do
+    echo ${baseline##*/}
+    tools/trec_eval-9.0.7/trec_eval \
+        -m ndcg_cut.3,500 -m map_cut.100,500 -m recall.100 \
+        $QREL $BASELINE
+done
+
+SPR_A=runs/cast20.automatic.rewrite.spr.top1000.trec
+SPR_M=runs/cast22.manual.rewrite.spr.top1000.trec
 echo '----------|--------|-------|------|---------|---------|--------|'
-echo Manual Baseline 
-tools/trec_eval-9.0.7/trec_eval \
-    -m ndcg_cut.3,500 -m map_cut.100,500 -m recall.100 \
-    $QREL $BASELINE_M
-echo '----------|--------|-------|------|---------|---------|--------|'
-echo Automatic Baseline monot5
-RERANK=runs/cast20.automatic.eval.topics.baseline.top500.monot5.small.trec
-tools/trec_eval-9.0.7/trec_eval \
-    -m ndcg_cut.3,500 -m map_cut.100,500 -m recall.100 \
-    $QREL $RERANK
-echo '----------|--------|-------|------|---------|---------|--------|'
-echo Manual Baseline monot5
-RERANK=runs/cast20.manual.eval.topics.baseline.top500.monot5.small.trec
-tools/trec_eval-9.0.7/trec_eval \
-    -m ndcg_cut.3,500 -m map_cut.100,500 -m recall.100 \
-    $QREL $RERANK
-echo '----------|--------|-------|------|---------|---------|--------|'
+for RUN in runs/*.trec;do
+    echo ${run##*/}
+    tools/trec_eval-9.0.7/trec_eval \
+        -m ndcg_cut.3,500 -m map_cut.100,500 -m recall.100 \
+        $QREL $RUN
+done
+

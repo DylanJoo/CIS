@@ -32,3 +32,4 @@ e2e/checkpoints/
 __pycache__/
 logs/
 *.swp
+archived/

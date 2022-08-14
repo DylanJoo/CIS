@@ -3,7 +3,7 @@ import argparse
 import random
 import collections
 import json
-from utils import load_queries, load_runs, load_collections, doc_pool_random_sampling, load_topics
+from utils import load_queries, load_runs, load_collections, doc_pool_random_sampling, load_topics, normalized
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--topic", default="data/canard/train.queries.jsonl", type=str)
@@ -13,6 +13,8 @@ parser.add_argument("--convir_dataset", default="convir_data/canard_convir.train
 parser.add_argument("-k", "--topk_pool", type=int, default=200)
 parser.add_argument("-k_pos", "--topk_positive", type=int, default=None)
 parser.add_argument("-n", "--n_examples", type=int, default=100)
+parser.add_argument("--discard_history_responses", action='store_true', default=False)
+parser.add_argument("--window_size", type=int, default=0)
 parser.add_argument("--version", type=str, default="top3")
 parser.add_argument("-collections", "--collections", type=str, default="data/trec-car+marco-psg/")
 args = parser.parse_args()
@@ -46,15 +48,15 @@ with open(args.topic) as topic:
         # get the positive pool and negative pool wrt query
         if args.version == 'overlapped':
             positive_pool = \
-                    [docid for docid in ranklist_teacher if docid in ranklist_student][:args.topk_pool]
+                    [docid for docid in ranklist_teacher if docid in ranklist_student][:args.topk_positive]
             negative_pool = [docid for docid in ranklist_student if docid not in ranklist_teacher]
 
             # corncer case I: OVERLAPPED < 3
-            if len(positive_pool) < args.topk_pool:
-                positive_pool = ranklist_teacher[:args.topk_positive]
+            if len(positive_pool) < args.topk_positive:
+                positive_pool = positive_pool + ranklist_teacher[:args.topk_positive]
             # corncer case II: OVERLAPPED > 197
-            if len(negative_pool) < 33.3333: # 3 (positive) * 33 (negative)
-                negative_pool = ranklist_student[-40:]
+            if len(negative_pool) < 30: # 3 (positive) * 33 (negative)
+                negative_pool = negative_pool + ranklist_student[-30:]
 
         if args.version == 'top3':
             positive_pool = ranklist_student[:args.topk_positive]
@@ -65,16 +67,20 @@ with open(args.topic) as topic:
         psg_ids_pos = doc_pool_random_sampling(positive_pool, args.n_examples)
         psg_ids_neg = doc_pool_random_sampling(negative_pool, args.n_examples)
         
-        q = query_dict['utterance']
+        q = normalized(query_dict['utterance'])
         c_t = "|".join(query_dict['history_topic'])
-        c_u = query_dict['history_utterances'] 
-        c_r = query_dict['history_responses'] 
-        c = "|".join([c_t] + [f"{u}|{r}" for u, r in zip(c_u, c_r)])
+        c_u = query_dict['history_utterances'][-args.window_size:]
+        c_r = query_dict['history_responses'][-args.window_size:]
+
+        if args.discard_history_responses:
+            c = normalized("|".join([c_t] + [f"{u}" for u in c_u]))
+        else:
+            c = normalized("|".join([c_t] + [f"{u}|{r}" for u, r in zip(c_u, c_r)]))
 
         for (psg_id_pos, psg_id_neg) in zip(psg_ids_pos, psg_ids_neg):
-            d_pos = passages[psg_id_pos]
+            d_pos = normalized(passages[psg_id_pos])
             fout.write(f"{q}\t{c}\t{d_pos}\ttrue\n")
-            d_neg = passages[psg_id_neg]
+            d_neg = normalized(passages[psg_id_neg])
             fout.write(f"{q}\t{c}\t{d_neg}\tfalse\n")
 
     if i % 10000 == 0:
