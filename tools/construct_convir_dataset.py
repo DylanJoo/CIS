@@ -17,6 +17,7 @@ parser.add_argument("--discard_history_responses", action='store_true', default=
 parser.add_argument("--window_size", type=int, default=0)
 parser.add_argument("--version", type=str, default="top3")
 parser.add_argument("-collections", "--collections", type=str, default="data/trec-car+marco-psg/")
+parser.add_argument("--multiview", action='store_true', default=False)
 args = parser.parse_args()
 
 
@@ -33,7 +34,7 @@ else:
     passages = load_collections(path=args.collections)
 
 # set seed
-random.seed(777)
+random.seed(123)
 # count = collections.defaultdict(list)
 fout = open(args.convir_dataset, 'w')
 
@@ -73,18 +74,25 @@ with open(args.topic) as topic:
         c_r = query_dict['history_responses'][-args.window_size:]
 
         if args.discard_history_responses:
-            c = normalized("|".join([c_t] + [f"{u}" for u in c_u]))
+            c = normalized("|".join([c_t] + c_u))
         else:
             c = normalized("|".join([c_t] + [f"{u}|{r}" for u, r in zip(c_u, c_r)]))
 
-        for (psg_id_pos, psg_id_neg) in zip(psg_ids_pos, psg_ids_neg):
+        for j, (psg_id_pos, psg_id_neg) in enumerate(zip(psg_ids_pos, psg_ids_neg)):
             d_pos = normalized(passages[psg_id_pos])
-            fout.write(f"{q}\t{c}\t{d_pos}\ttrue\n")
             d_neg = normalized(passages[psg_id_neg])
-            fout.write(f"{q}\t{c}\t{d_neg}\tfalse\n")
+            fout.write(f"Query: {q} Context: {c} Document: {d_pos} Relevant:\ttrue\n")
+            fout.write(f"Query: {q} Context: {c} Document: {d_neg} Relevant:\tfalse\n")
+            if j % 4 == 0 and args.multiview:
+                fout.write(f"Query: {q} Context: {c} Rewrite:\t{query_dict['rewrite']}\n")
+            # else:
+            #     fout.write(f"{q}\t{c}\t{d_pos}\ttrue\n")
+            #     fout.write(f"{q}\t{c}\t{d_neg}\tfalse\n")
 
     if i % 10000 == 0:
         print(f"{i} convir queries finished...")
+
+fout.close()
 
 print("DONE")
 

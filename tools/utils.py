@@ -1,9 +1,26 @@
 import json
 import argparse
 import random
+import numpy as np
 import re
 import collections
 import os
+
+def document_extraction(document, query):
+    from nltk.tokenize import word_tokenize, sent_tokenize
+    sents = sent_tokenize(document)
+    words_q = word_tokenize(query)
+    pos_tags = nltk.pos_tag(words_q, tagset="universal")
+    words_q = [w for w, p in pos_tags if p in ['NOUN', 'ADJ', 'VERB']]
+    match = []
+    for i, s in enumerate(sents):
+        c = 0
+        for w in word_tokenize(s):
+            if w in words_q:
+                c += 1
+        match[i] = c
+
+    return sents[np.argmax(match)]
 
 def normalized(x):
     x = x.strip()

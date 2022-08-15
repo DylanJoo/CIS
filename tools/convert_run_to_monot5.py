@@ -2,7 +2,7 @@ import os
 import collections
 import argparse
 import json
-from utils import load_runs, load_queries, load_collections, load_topics, normalized
+from utils import load_runs, load_queries, load_collections, load_topics, normalized, document_extraction
 
 def convert_to_monot5(args):
     # laod requirments
@@ -24,17 +24,24 @@ def convert_to_monot5(args):
             for k, docid in enumerate(docid_ranklist):
                 # q = queries[qid].strip()
                 d = normalized(collections[docid])
-                if args.use_context > 0:
+                if args.use_context != -1:
                     q = normalized(topics[qid]['utterance'])
                     c_u = topics[qid]['history_utterances']
                     c_r = topics[qid]['history_responses']
-                    c = normalized(
-                            "|".join([f"{u}|{r}" for u, r in zip(c_u, c_r)][-args.use_context:])
-                    )
+                    if args.use_response:
+                        # [TODO] Make the document shorter to meet the lenght limiation of T5
+                        c = normalized(
+                                "|".join([f"{u}|{r}" for u, r in zip(c_u, c_r)][-args.use_context:])
+                        )
+                    else:
+                        c = normalized("|".join([u for u in c_u[-args.use_context:]]))
                     text_pair.write(f"Query: {q} Context: {c} Document: {d} Relevant:\n")
                 else:
                     try:
-                        q = normalized(topics[qid]['automatic_rewritten'])
+                        if args.use_manual:
+                            q = normalized(topics[qid]['manual_rewritten'])
+                        else:
+                            q = normalized(topics[qid]['automatic_rewritten'])
                     except:
                         q = normalized(topics[qid]['rewrite'])
                     text_pair.write(f"Query: {q} Document: {d} Relevant:\n")
@@ -53,7 +60,9 @@ if __name__ == '__main__':
     parser.add_argument("-topic", "--topic_queries", type=str, required=True,)
     parser.add_argument("--output_text_pair", type=str, required=True,)
     parser.add_argument("--output_id_pair", type=str, required=True,)
-    parser.add_argument("--use_context", type=int, default=0)
+    parser.add_argument("--use_context", type=int, default=-1)
+    parser.add_argument("--use_manual", action='store_true', default=False)
+    parser.add_argument("--use_response", action='store_true', default=False)
     args = parser.parse_args()
 
     convert_to_monot5(args)
