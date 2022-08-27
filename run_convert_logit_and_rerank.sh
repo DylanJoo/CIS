@@ -32,27 +32,17 @@ python3 tools/convert_logit_to_rerank.py \
   -topk 1000 \
   --resoftmax &
 
-MODEL=model-pn-overlap-wndw-3
-python3 tools/convert_logit_to_rerank.py \
-  -flogits ${FOLDER}/${MODEL}/cast20.${TYPE}.rewrite.${Q_FORM}.top1000.pred.flogits \
-  -tlogits ${FOLDER}/${MODEL}/cast20.${TYPE}.rewrite.${Q_FORM}.top1000.pred.tlogits \
-  -score ${FOLDER}/${MODEL}/cast20.${TYPE}.rewrite.${Q_FORM}.top1000.pred.scores \
-  -runs runs/cast20.${TYPE}.rewrite.spr.top1000.trec \
-  -rerank_runs runs/cast20.${TYPE}.rewrite.spr.top1000.conv.monot5.pnol.wndw3.trec \
-  -topk 1000 \
-  --resoftmax &
+# MODEL=model-pn-overlap-wndw-3
+# python3 tools/convert_logit_to_rerank.py \
+#   -flogits ${FOLDER}/${MODEL}/cast20.${TYPE}.rewrite.${Q_FORM}.top1000.pred.flogits \
+#   -tlogits ${FOLDER}/${MODEL}/cast20.${TYPE}.rewrite.${Q_FORM}.top1000.pred.tlogits \
+#   -score ${FOLDER}/${MODEL}/cast20.${TYPE}.rewrite.${Q_FORM}.top1000.pred.scores \
+#   -runs runs/cast20.${TYPE}.rewrite.spr.top1000.trec \
+#   -rerank_runs runs/cast20.${TYPE}.rewrite.spr.top1000.conv.monot5.pnol.wndw3.trec \
+#   -topk 1000 \
+#   --resoftmax &
 
-# new
-MODEL=model-pn-top3-wndw-allq-new
-python3 tools/convert_logit_to_rerank.py \
-  -flogits ${FOLDER}/${MODEL}/cast20.${TYPE}.rewrite.${Q_FORM}.top1000.pred.flogits \
-  -tlogits ${FOLDER}/${MODEL}/cast20.${TYPE}.rewrite.${Q_FORM}.top1000.pred.tlogits \
-  -score ${FOLDER}/${MODEL}/cast20.${TYPE}.rewrite.${Q_FORM}.top1000.pred.scores \
-  -runs runs/cast20.${TYPE}.rewrite.spr.top1000.trec \
-  -rerank_runs runs/cast20.${TYPE}.rewrite.spr.top1000.conv.monot5.pntop3.wndwallq.new.trec \
-  -topk 1000 \
-  --resoftmax &
-
+# multi
 MODEL=model-pn-top3-wndw-allq-multi
 python3 tools/convert_logit_to_rerank.py \
   -flogits ${FOLDER}/${MODEL}/cast20.${TYPE}.rewrite.${Q_FORM}.top1000.pred.flogits \
