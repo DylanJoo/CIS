@@ -11,7 +11,7 @@ def combine_context(history, topics=None, context_window=0):
     if topics is not None:
         output = topics + output
 
-    return " ||| ".join(output)
+    return "|||".join(output)
 
 def tokens_expansion(rewrite_query, expansion_source, diff=True):
     if diff:
@@ -56,9 +56,9 @@ def make_canard_dataset(args):
 
         ## (4) [Token generation] (1) setting + token generation 
         if args.query_expansion == 'answer':
-            tgt = rewrite + " ||| " + tokens_expansion(rewrite, answer)
+            tgt = rewrite + "|||" + tokens_expansion(rewrite, answer)
         if args.query_expansion == 'history':
-            tgt = rewrite + " ||| " + tokens_expansion(rewrite, src)
+            tgt = rewrite + "|||" + tokens_expansion(rewrite, src)
 
         output.write(f"{src}\t{tgt}\n")
 
