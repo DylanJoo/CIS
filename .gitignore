@@ -18,7 +18,8 @@ indexes/
 */checkpoints/
 
 # runs
-runs/
+convir_data_construction/runs/ 
+# runs/
 
 # re-ranking
 rerank/checkpoints/

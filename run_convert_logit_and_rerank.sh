@@ -1,77 +1,75 @@
-FOLDER=data/cast20/conv-monot5-pairs
 TYPE=automatic
-Q_FORM=allq
 
-MODEL=model-pn-top3-wndw-allq
+# conv monot5
+FOLDER=data/cast20/conv-monot5-pairs
+MODEL=conv-monot5-base-canard4ir-10k
 python3 tools/convert_logit_to_rerank.py \
-  -flogits ${FOLDER}/${MODEL}/cast20.${TYPE}.rewrite.${Q_FORM}.top1000.pred.flogits \
-  -tlogits ${FOLDER}/${MODEL}/cast20.${TYPE}.rewrite.${Q_FORM}.top1000.pred.tlogits \
-  -score ${FOLDER}/${MODEL}/cast20.${TYPE}.rewrite.${Q_FORM}.top1000.pred.scores \
+  -flogits ${FOLDER}/${MODEL}/cast20.${TYPE}.rewrite.top1000.pred.flogits \
+  -tlogits ${FOLDER}/${MODEL}/cast20.${TYPE}.rewrite.top1000.pred.tlogits \
+  -score ${FOLDER}/${MODEL}/cast20.${TYPE}.rewrite.top1000.pred.scores \
   -runs runs/cast20.${TYPE}.rewrite.spr.top1000.trec \
-  -rerank_runs runs/cast20.${TYPE}.rewrite.spr.top1000.conv.monot5.pntop3.wndwallq.trec \
+  -rerank_runs runs/cast20.${TYPE}.rewrite.spr.top1000.conv.monot5.trec \
   -topk 1000 \
   --resoftmax &
 
-MODEL=model-pn-overlap-wndw-allq
+MODEL=conv-monot5-base-denoise-canard4ir-10k
 python3 tools/convert_logit_to_rerank.py \
-  -flogits ${FOLDER}/${MODEL}/cast20.${TYPE}.rewrite.${Q_FORM}.top1000.pred.flogits \
-  -tlogits ${FOLDER}/${MODEL}/cast20.${TYPE}.rewrite.${Q_FORM}.top1000.pred.tlogits \
-  -score ${FOLDER}/${MODEL}/cast20.${TYPE}.rewrite.${Q_FORM}.top1000.pred.scores \
+  -flogits ${FOLDER}/${MODEL}/cast20.${TYPE}.rewrite.top1000.pred.flogits \
+  -tlogits ${FOLDER}/${MODEL}/cast20.${TYPE}.rewrite.top1000.pred.tlogits \
+  -score ${FOLDER}/${MODEL}/cast20.${TYPE}.rewrite.top1000.pred.scores \
   -runs runs/cast20.${TYPE}.rewrite.spr.top1000.trec \
-  -rerank_runs runs/cast20.${TYPE}.rewrite.spr.top1000.conv.monot5.pnol.wndwallq.trec \
+  -rerank_runs runs/cast20.${TYPE}.rewrite.spr.top1000.denoise.conv.monot5.trec \
   -topk 1000 \
   --resoftmax &
 
-MODEL=model-pn-top3-wndw-3
+MODEL=conv-monot5m-base-canard4ir-10k
 python3 tools/convert_logit_to_rerank.py \
-  -flogits ${FOLDER}/${MODEL}/cast20.${TYPE}.rewrite.${Q_FORM}.top1000.pred.flogits \
-  -tlogits ${FOLDER}/${MODEL}/cast20.${TYPE}.rewrite.${Q_FORM}.top1000.pred.tlogits \
-  -score ${FOLDER}/${MODEL}/cast20.${TYPE}.rewrite.${Q_FORM}.top1000.pred.scores \
+  -flogits ${FOLDER}/${MODEL}/cast20.${TYPE}.rewrite.top1000.pred.flogits \
+  -tlogits ${FOLDER}/${MODEL}/cast20.${TYPE}.rewrite.top1000.pred.tlogits \
+  -score ${FOLDER}/${MODEL}/cast20.${TYPE}.rewrite.top1000.pred.scores \
   -runs runs/cast20.${TYPE}.rewrite.spr.top1000.trec \
-  -rerank_runs runs/cast20.${TYPE}.rewrite.spr.top1000.conv.monot5.pntop3.wndw3.trec \
+  -rerank_runs runs/cast20.${TYPE}.rewrite.spr.top1000.conv.monot5m.trec \
   -topk 1000 \
   --resoftmax &
 
-# MODEL=model-pn-overlap-wndw-3
-# python3 tools/convert_logit_to_rerank.py \
-#   -flogits ${FOLDER}/${MODEL}/cast20.${TYPE}.rewrite.${Q_FORM}.top1000.pred.flogits \
-#   -tlogits ${FOLDER}/${MODEL}/cast20.${TYPE}.rewrite.${Q_FORM}.top1000.pred.tlogits \
-#   -score ${FOLDER}/${MODEL}/cast20.${TYPE}.rewrite.${Q_FORM}.top1000.pred.scores \
-#   -runs runs/cast20.${TYPE}.rewrite.spr.top1000.trec \
-#   -rerank_runs runs/cast20.${TYPE}.rewrite.spr.top1000.conv.monot5.pnol.wndw3.trec \
-#   -topk 1000 \
-#   --resoftmax &
-
-# multi
-MODEL=model-pn-top3-wndw-allq-multi
+MODEL=conv-monot5m-large-canard4ir-10k
 python3 tools/convert_logit_to_rerank.py \
-  -flogits ${FOLDER}/${MODEL}/cast20.${TYPE}.rewrite.${Q_FORM}.top1000.pred.flogits \
-  -tlogits ${FOLDER}/${MODEL}/cast20.${TYPE}.rewrite.${Q_FORM}.top1000.pred.tlogits \
-  -score ${FOLDER}/${MODEL}/cast20.${TYPE}.rewrite.${Q_FORM}.top1000.pred.scores \
+  -flogits ${FOLDER}/${MODEL}/cast20.${TYPE}.rewrite.top1000.pred.flogits \
+  -tlogits ${FOLDER}/${MODEL}/cast20.${TYPE}.rewrite.top1000.pred.tlogits \
+  -score ${FOLDER}/${MODEL}/cast20.${TYPE}.rewrite.top1000.pred.scores \
   -runs runs/cast20.${TYPE}.rewrite.spr.top1000.trec \
-  -rerank_runs runs/cast20.${TYPE}.rewrite.spr.top1000.conv.monot5.pntop3.wndwallq.multi.trec \
+  -rerank_runs runs/cast20.${TYPE}.rewrite.spr.top1000.conv.monot5m.large.trec \
   -topk 1000 \
   --resoftmax &
 
-
+# monot5
 FOLDER=data/cast20/monot5-pairs
-# standard monot5
+MODEL=monot5-base-msmarco-100k
 python3 tools/convert_logit_to_rerank.py \
-  -flogits ${FOLDER}/cast20.automatic.rewrite.top1000.pred.flogits \
-  -tlogits ${FOLDER}/cast20.automatic.rewrite.top1000.pred.tlogits \
-  -score ${FOLDER}/cast20.automatic.rewrite.top1000.pred.scores \
-  -runs runs/cast20.automatic.rewrite.spr.top1000.trec \
-  -rerank_runs runs/cast20.automatic.rewrite.spr.top1000.monot5.trec \
+  -flogits ${FOLDER}/${MODEL}/cast20.${TYPE}.rewrite.top1000.pred.flogits \
+  -tlogits ${FOLDER}/${MODEL}/cast20.${TYPE}.rewrite.top1000.pred.tlogits \
+  -score ${FOLDER}/${MODEL}/cast20.${TYPE}.rewrite.top1000.pred.scores \
+  -runs runs/cast20.${TYPE}.rewrite.spr.top1000.trec \
+  -rerank_runs runs/cast20.${TYPE}.rewrite.spr.top1000.monot5.trec \
   -topk 1000 \
   --resoftmax &
 
-# standard monot5 with zero shot conv rerank
+MODEL=monot5-base-msmarco-100k-zs
 python3 tools/convert_logit_to_rerank.py \
-  -flogits ${FOLDER}/cast20.automatic.rewrite.zeroshot.top1000.pred.flogits \
-  -tlogits ${FOLDER}/cast20.automatic.rewrite.zeroshot.top1000.pred.tlogits \
-  -score ${FOLDER}/cast20.automatic.rewrite.zeroshot.top1000.pred.scores \
-  -runs runs/cast20.automatic.rewrite.spr.top1000.trec \
-  -rerank_runs runs/cast20.automatic.rewrite.zeroshot.spr.top1000.monot5.trec \
+  -flogits ${FOLDER}/${MODEL}/cast20.${TYPE}.rewrite.top1000.pred.flogits \
+  -tlogits ${FOLDER}/${MODEL}/cast20.${TYPE}.rewrite.top1000.pred.tlogits \
+  -score ${FOLDER}/${MODEL}/cast20.${TYPE}.rewrite.top1000.pred.scores \
+  -runs runs/cast20.${TYPE}.rewrite.spr.top1000.trec \
+  -rerank_runs runs/cast20.${TYPE}.rewrite.spr.top1000.monot5.zeroshot.trec \
   -topk 1000 \
   --resoftmax &
 
+MODEL=monot5m-large-msmarco-100k
+python3 tools/convert_logit_to_rerank.py \
+  -flogits ${FOLDER}/${MODEL}/cast20.${TYPE}.rewrite.top1000.pred.flogits \
+  -tlogits ${FOLDER}/${MODEL}/cast20.${TYPE}.rewrite.top1000.pred.tlogits \
+  -score ${FOLDER}/${MODEL}/cast20.${TYPE}.rewrite.top1000.pred.scores \
+  -runs runs/cast20.${TYPE}.rewrite.spr.top1000.trec \
+  -rerank_runs runs/cast20.${TYPE}.rewrite.spr.top1000.monot5.large.trec \
+  -topk 1000 \
+  --resoftmax &
