@@ -4,8 +4,8 @@ from pyserini.search.lucene import LuceneSearcher
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-k", "--retrieve_k_docs", default=1000, type=int)
-parser.add_argument("-k1", "--k1", default=float(0.9), type=float)
-parser.add_argument("-b", "--b", default=float(0.4), type=float)
+parser.add_argument("-k1", "--k1", type=float)
+parser.add_argument("-b", "--b", type=float)
 parser.add_argument("-index", "--dir_index", default=None, type=str)
 parser.add_argument("-qid", "--path_qid", default=None, type=str)
 parser.add_argument("-query", "--path_qtext", default='sample_queries.tsv', type=str)

@@ -11,7 +11,17 @@ for RUN in runs/*top1000*trec;do
     echo ${RUN##*/}
     echo '----------|--------|-------|------|---------|---------|--------|'
     tools/trec_eval-9.0.7/trec_eval \
-        -m ndcg_cut.3,5,500 -m map_cut.500 -m recall.500 \
+        -m ndcg_cut.3,5,500,1000 -m map_cut.500 -m recall.500,1000 \
+        $QREL $RUN
+done
+
+# Dense Retrieval from JACK
+for RUN in runs/cast_result/*cast2020*trec;do
+    echo '----------|--------|-------|------|---------|---------|--------|'
+    echo ${RUN##*/}
+    echo '----------|--------|-------|------|---------|---------|--------|'
+    tools/trec_eval-9.0.7/trec_eval \
+        -m ndcg_cut.3,5,500,1000 -m map_cut.500 -m recall.500,1000 \
         $QREL $RUN
 done
 

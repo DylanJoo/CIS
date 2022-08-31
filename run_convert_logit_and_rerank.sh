@@ -1,8 +1,17 @@
+####################################################################
+# Submission candidates
+# (0) Baseline (weak) monot5 msmarco large + rewritten query
+# (1) Baseline (strong) monot5m msmarco large + rewritten query
+# (2) conv.monot5 I:  Denoised conv.monot5 canard4ir + conversational query
+# (3) conv.monot5 II:  Denoised conv.monot5m canard4ir + conversational query
+####################################################################
 TYPE=automatic
 
-# conv monot5
+##################################################################### 
+# Conversational re-ranking
+####################################################################
 FOLDER=data/cast20/conv-monot5-pairs
-MODEL=conv-monot5-base-canard4ir-10k
+MODEL=conv-monot5-large-denoise-canard4ir-10k # note here we use denoise as our default setting instead of CQE's top3
 python3 tools/convert_logit_to_rerank.py \
   -flogits ${FOLDER}/${MODEL}/cast20.${TYPE}.rewrite.top1000.pred.flogits \
   -tlogits ${FOLDER}/${MODEL}/cast20.${TYPE}.rewrite.top1000.pred.tlogits \
@@ -12,17 +21,7 @@ python3 tools/convert_logit_to_rerank.py \
   -topk 1000 \
   --resoftmax &
 
-MODEL=conv-monot5-base-denoise-canard4ir-10k
-python3 tools/convert_logit_to_rerank.py \
-  -flogits ${FOLDER}/${MODEL}/cast20.${TYPE}.rewrite.top1000.pred.flogits \
-  -tlogits ${FOLDER}/${MODEL}/cast20.${TYPE}.rewrite.top1000.pred.tlogits \
-  -score ${FOLDER}/${MODEL}/cast20.${TYPE}.rewrite.top1000.pred.scores \
-  -runs runs/cast20.${TYPE}.rewrite.spr.top1000.trec \
-  -rerank_runs runs/cast20.${TYPE}.rewrite.spr.top1000.denoise.conv.monot5.trec \
-  -topk 1000 \
-  --resoftmax &
-
-MODEL=conv-monot5m-base-canard4ir-10k
+MODEL=conv-monot5m-large-canard4ir-10k
 python3 tools/convert_logit_to_rerank.py \
   -flogits ${FOLDER}/${MODEL}/cast20.${TYPE}.rewrite.top1000.pred.flogits \
   -tlogits ${FOLDER}/${MODEL}/cast20.${TYPE}.rewrite.top1000.pred.tlogits \
@@ -32,19 +31,11 @@ python3 tools/convert_logit_to_rerank.py \
   -topk 1000 \
   --resoftmax &
 
-MODEL=conv-monot5m-large-canard4ir-10k
-python3 tools/convert_logit_to_rerank.py \
-  -flogits ${FOLDER}/${MODEL}/cast20.${TYPE}.rewrite.top1000.pred.flogits \
-  -tlogits ${FOLDER}/${MODEL}/cast20.${TYPE}.rewrite.top1000.pred.tlogits \
-  -score ${FOLDER}/${MODEL}/cast20.${TYPE}.rewrite.top1000.pred.scores \
-  -runs runs/cast20.${TYPE}.rewrite.spr.top1000.trec \
-  -rerank_runs runs/cast20.${TYPE}.rewrite.spr.top1000.conv.monot5m.large.trec \
-  -topk 1000 \
-  --resoftmax &
-
-# monot5
+##################################################################### 
+# Standard re-ranking
+####################################################################
 FOLDER=data/cast20/monot5-pairs
-MODEL=monot5-base-msmarco-100k
+MODEL=monot5-large-msmarco-100k
 python3 tools/convert_logit_to_rerank.py \
   -flogits ${FOLDER}/${MODEL}/cast20.${TYPE}.rewrite.top1000.pred.flogits \
   -tlogits ${FOLDER}/${MODEL}/cast20.${TYPE}.rewrite.top1000.pred.tlogits \
@@ -54,22 +45,12 @@ python3 tools/convert_logit_to_rerank.py \
   -topk 1000 \
   --resoftmax &
 
-MODEL=monot5-base-msmarco-100k-zs
-python3 tools/convert_logit_to_rerank.py \
-  -flogits ${FOLDER}/${MODEL}/cast20.${TYPE}.rewrite.top1000.pred.flogits \
-  -tlogits ${FOLDER}/${MODEL}/cast20.${TYPE}.rewrite.top1000.pred.tlogits \
-  -score ${FOLDER}/${MODEL}/cast20.${TYPE}.rewrite.top1000.pred.scores \
-  -runs runs/cast20.${TYPE}.rewrite.spr.top1000.trec \
-  -rerank_runs runs/cast20.${TYPE}.rewrite.spr.top1000.monot5.zeroshot.trec \
-  -topk 1000 \
-  --resoftmax &
-
 MODEL=monot5m-large-msmarco-100k
 python3 tools/convert_logit_to_rerank.py \
   -flogits ${FOLDER}/${MODEL}/cast20.${TYPE}.rewrite.top1000.pred.flogits \
   -tlogits ${FOLDER}/${MODEL}/cast20.${TYPE}.rewrite.top1000.pred.tlogits \
   -score ${FOLDER}/${MODEL}/cast20.${TYPE}.rewrite.top1000.pred.scores \
   -runs runs/cast20.${TYPE}.rewrite.spr.top1000.trec \
-  -rerank_runs runs/cast20.${TYPE}.rewrite.spr.top1000.monot5.large.trec \
+  -rerank_runs runs/cast20.${TYPE}.rewrite.spr.top1000.monot5m.trec \
   -topk 1000 \
   --resoftmax &
