@@ -7,7 +7,7 @@ for method in cqe t5 t5-cqe;do
       --use_query_key utterance \
       --output_text_pair data/cast20/conv-monot5-pairs/cast20.sclin.${method}.top1000.conv.monot5.text_pairs.txt \
       --output_id_pair data/cast20/conv-monot5-pairs/cast20.sclin.${method}.top1000.conv.monot5.id_pairs.txt \
-      --use_context 0 & 
+      --use_context 0 &
 
     # automatic (standard)
     python3 tools/convert_run_to_monot5.py \

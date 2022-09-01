@@ -36,15 +36,24 @@ def convert_trecweb_to_jsonl():
             passage_cano = passage_collections[canonical_passage_id]
             
             # output
+            # output.write(
+            #         json.dumps({'id': f"{topic_id}_{turn_id}",
+            #                     'utterance': utterance,
+            #                     'automatic_rewritten': automatic_rewritten,
+            #                     'manual_rewritten': manual_rewritten,
+            #                     'canonical_passage_id': canonical_passage_id,
+            #                     'context': history['context'],
+            #                     'history_utterances': history['utterances'],
+            #                     'history_responses': history['responses']}) +'\n'
+            # )
+            # output
             output.write(
                     json.dumps({'id': f"{topic_id}_{turn_id}",
                                 'utterance': utterance,
                                 'automatic_rewritten': automatic_rewritten,
                                 'manual_rewritten': manual_rewritten,
                                 'canonical_passage_id': canonical_passage_id,
-                                'context': history['context'],
-                                'history_utterances': history['utterances'],
-                                'history_responses': history['responses']}) +'\n'
+                                'history_utterances': history['utterances']}) +'\n'
             )
 
             # history

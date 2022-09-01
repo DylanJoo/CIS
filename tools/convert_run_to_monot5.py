@@ -22,22 +22,22 @@ def convert_to_monot5(args):
 
                 # Query source 
                 if args.reformulated_queries:
-                    Q = normalized(queries[qid])
+                    Q = queries[qid]
                 else:
-                    Q = normalized(topics[qid][f'{args.use_query_key}'])
+                    Q = topics[qid][f'{args.use_query_key}']
 
                 ## (1) Conversational query for conv monot5
                 if args.use_context is not None:
-                    HU = topics[qid]['history_utterances']
-                    HR = topics[qid]['history_responses']
 
                     if args.use_response:
+                        HU = topics[qid]['history_utterances']
+                        HR = topics[qid]['history_responses']
                         # [TODO 1] Make the document shorter to meet the lenght limiation of T5
                         # [TODO 2] Make the all query and k responses
                         C = "|".join([f"{u}|{r}" for u, r in zip(HU, HR)][-args.use_context:])
                     else:
+                        HU = topics[qid]['history_utterances']
                         C = "|".join([u for u in HU[-args.use_context:]])
-                    C = normalized(C)
 
                     id_pair.write(f"{qid}\t{pid}\n")
                     text_pair.write(f"Query: {Q} Context: {C} Document: {P} Relevant:\n")
