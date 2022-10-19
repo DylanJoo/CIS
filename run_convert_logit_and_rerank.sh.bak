@@ -11,7 +11,7 @@ TYPE=automatic
 # Conversational re-ranking
 ####################################################################
 FOLDER=data/cast20/conv-monot5-pairs
-MODEL=conv-monot5-large-denoise-canard4ir-10k # note here we use denoise as our default setting instead of CQE's top3
+MODEL=conv-monot5-large-denoise-canard4ir-10k 
 python3 tools/convert_logit_to_rerank.py \
   -flogits ${FOLDER}/${MODEL}/cast20.${TYPE}.rewrite.top1000.pred.flogits \
   -tlogits ${FOLDER}/${MODEL}/cast20.${TYPE}.rewrite.top1000.pred.tlogits \
